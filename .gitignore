@@ -1,0 +1,26 @@
+# Local databases and generated reports
+/data/
+/reports/
+*.sqlite
+*.sqlite3
+*.db
+
+# Real/private inputs (synthetic fixtures under tests/fixtures remain trackable)
+/incoming/
+/private/
+/real-data/
+*.broker-export.csv
+*.env
+*.pem
+*.key
+
+# Python/tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+dist/
+build/
+*.egg-info/
