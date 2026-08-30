@@ -1,16 +1,30 @@
+# Historical research / deferred — not active implementation instructions
+
+Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred roadmap: Hermes/live providers/scheduling/delivery. Prohibited: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
 # NISA Quant Assistant — Product Specification
 
-**Status:** Draft for Ilham review  
-**Project boundary:** Standalone Hermes/Yume investment assistant  
+**Status:** Current local release boundary plus deferred product specification
+**Project boundary:** Standalone local Python research package
 **Relationship to Yume iOS:** None. This specification does not modify, extend, or authorize work in `/Users/user/Documents/Yume/yume-ios`.  
-**Implementation:** Production implementation must be delegated through `codex-orchestrator`; the executor uses `gpt-5.6-luna` with high reasoning and the reviewer uses `gpt-5.6-sol` with medium reasoning.  
+**Implementation:** The current release is implemented and verified locally by the Python CLI; no Hermes/Codex runtime routing is active.
 **Date:** 2026-08-24 (Asia/Tokyo)
 
 ---
 
+## Release boundary (authoritative for the current tree)
+
+Implemented now: local fixture/CSV/SQLite/CLI only.
+
+Deferred/not implemented: Hermes runtime integration, live providers, scheduling, and delivery.
+
+Prohibited boundaries: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
+The requirements and architecture below preserve the historical product proposal. They are deferred roadmap material unless explicitly identified as part of the implemented local slice; they are not active routing instructions, provider configuration, or permission to expand scope.
+
 ## 1. Product definition
 
-NISA Quant Assistant is a personal investment-research system operated through Hermes. It acts like a careful quant/research analyst: it gathers evidence, computes portfolio and market metrics, produces ranked candidates, explains risks, tracks prior recommendations, and gives Ilham a decision-ready report.
+The current NISA Quant Assistant is a local-first, advisory-only Python package. It imports synthetic fixtures/CSV files, stores normalized records in SQLite, computes deterministic portfolio and market metrics, screens local candidates, renders cited Markdown, and tracks recommendation outcomes. The historical proposal describes a possible Hermes-operated research workflow.
 
 It is **not** an automated trading system, broker robot, order router, or replacement for Ilham's investment judgment.
 
@@ -33,13 +47,13 @@ These are recommendations for **manual human review**. They are not certainty cl
 ### Goals
 
 1. Help Ilham research Japanese and international stocks and ETFs suitable for a Japan-based NISA investor.
-2. Produce recurring weekly/monthly market briefs with citations and data timestamps.
-3. Generate watchlist screens using deterministic metrics such as momentum, valuation, drawdown, volatility, quality, distributions, and benchmark-relative performance.
+2. **Deferred:** Produce recurring weekly/monthly market briefs with citations and data timestamps.
+3. Generate local watchlist screens using deterministic metrics such as momentum, drawdown, volatility, distributions, and benchmark-relative performance; valuation/quality extensions are deferred.
 4. Maintain a deterministic portfolio ledger that separates NISA, taxable, cash, and foreign-currency positions.
-5. Provide company/ETF deep dives from official filings, issuer pages, JPX/J-Quants data, and other clearly identified sources.
+5. **Deferred:** Provide company/ETF deep dives from live official filings, issuer pages, JPX/J-Quants data, and other clearly identified sources.
 6. Track recommendations over time and compare them with passive benchmarks without hindsight contamination.
 7. Make uncertainty, missing data, stale data, conflicting sources, and model limitations visible.
-8. Use Hermes with the approved OpenAI Codex `gpt-5.6-luna` model at high reasoning for analysis, summaries, images, and files; record the actual model/provider per report and never silently substitute another model. The model narrates and reasons over sourced inputs but does not become the accounting authority.
+8. **Deferred:** Use a future approved model/runtime for narrative synthesis; no Hermes/Codex provider is configured by this release.
 
 ### Non-goals
 
@@ -54,7 +68,7 @@ These are recommendations for **manual human review**. They are not certainty cl
 
 ---
 
-## 3. Users and usage cadence
+## 3. Users and usage cadence (deferred scheduling roadmap)
 
 **User:** Ilham, single-user personal investor in Japan.  
 **Timezone:** Asia/Tokyo.  
@@ -74,7 +88,7 @@ The cadence must not be described as a latency guarantee. Jobs may be delayed, s
 
 ---
 
-## 4. Proposed system boundary
+## 4. Proposed future system boundary (deferred, not implemented)
 
 ```text
 Official/public data + broker CSV exports
@@ -106,22 +120,22 @@ Official/public data + broker CSV exports
 - Source providers are authoritative for the facts they publish.
 - The local ledger is authoritative only for the normalized records it has accepted; it is not a broker or host source of truth.
 - Deterministic code is authoritative for derived arithmetic and portfolio accounting.
-- Hermes with OpenAI Codex Luna is responsible for synthesis, prioritization, explanation, and uncertainty wording.
+- A future Hermes/model runtime may be responsible for synthesis, prioritization, explanation, and uncertainty wording; this is deferred and inactive.
 - Ilham alone authorizes and performs any investment transaction.
 
 No component may silently convert a stale cache, model inference, or missing value into a current fact.
 
 ---
 
-## 5. Functional requirements
+## 5. Functional requirements (local slice plus deferred roadmap)
 
 ### FR-01 — Watchlist
 
 The system shall maintain a user-editable watchlist of security identifiers, display names, asset type, market/exchange, currency, benchmark, and notes. Japanese identifiers may use JPX codes and Yahoo Finance `.T` symbols where applicable.
 
-### FR-02 — Market data ingestion
+### FR-02 — Market data ingestion (current slice: local fixtures only)
 
-The system shall support a source-backed ingestion path for daily prices and relevant metadata, prioritizing J-Quants V2 for Japanese-listed instruments and yfinance where appropriate. Each record shall retain source, retrieval time, observation date, and freshness/availability status.
+The current release supports source-backed local price and distribution fixtures. J-Quants V2 and yfinance are deferred future providers, not active clients in this repository. Each local record retains source, UTC-normalized retrieval time, observation date, and freshness/availability status.
 
 The first implementation shall not assume that a free source provides real-time data. J-Quants Free's reported 12-week delay and rate limits must be visible in the data status.
 
@@ -153,20 +167,18 @@ The system shall compute, from normalized records and cited prices:
 
 All formulas, price dates, currency assumptions, and missing-input behavior shall be documented and testable.
 
+Snapshot replay shall verify sufficient same-currency quantity and cost basis before applying every SELL. An unreconciled legacy/direct-database SELL shall remain auditable but be skipped from accounting with an explicit warning; it shall not create realized P/L, negative ledger state, or a fabricated scalar basis. Mixed-currency positions remain explicit and unavailable for scalar aggregates while valid same-currency accounting is retained.
+
 ### FR-06 — Deterministic candidate screens
 
-The system shall support transparent screens, initially:
+The current release supports transparent local screens for trend/momentum context, drawdown, volatility, distributions, and benchmark-relative behavior. The following advanced inputs remain deferred:
 
-- trend/momentum and moving-average context;
-- drawdown/crash-guard context;
-- valuation and financial-quality fields when sourced;
-- volatility and concentration;
-- distribution/yield changes for ETFs where issuer or official data supports them;
-- benchmark-relative behavior.
+- valuation and financial-quality fields from live sources;
+- issuer/event monitoring and other live-source extensions.
 
 A screen produces candidates and reasons; it does not place an order or claim prediction certainty.
 
-### FR-07 — Research brief
+### FR-07 — Research brief (deferred Hermes narrative target)
 
 Hermes shall produce a cited Markdown brief containing:
 
@@ -179,7 +191,7 @@ Hermes shall produce a cited Markdown brief containing:
 7. action vocabulary and manual-review reminder;
 8. sources with URLs and retrieval dates.
 
-### FR-08 — Recommendation labels and rationale
+### FR-08 — Recommendation labels and rationale (deferred narrative target; current renderer is source-bound)
 
 Every recommendation shall include:
 
@@ -198,11 +210,11 @@ Every recommendation shall include:
 
 The system shall record recommendation timestamp, input cutoff, model identifier, prompt/template version, source references, label, thesis, metrics, and later outcome snapshots. Outcome tracking shall use only information available after the recommendation cutoff and shall retain a passive benchmark comparison.
 
-### FR-10 — ETF and earnings monitoring
+### FR-10 — ETF and earnings monitoring (deferred)
 
 The system shall support watchlists for ETF issuer distributions, ex-dates/payment dates, holdings/composition changes where available, earnings dates, and material official filings. It shall prefer issuer/JPX/EDINET/J-Quants sources and mark parser uncertainty for human review.
 
-### FR-11 — Deep research
+### FR-11 — Deep research (deferred)
 
 On demand, Hermes shall assemble a source-backed company/ETF memo covering business/fund objective, valuation inputs, financial trend, distribution policy, risks, catalysts, counterarguments, and source freshness. Numeric facts must originate from structured data or cited primary documents.
 
@@ -213,6 +225,8 @@ The output may say that an instrument is a BUY/SELL candidate, but the system sh
 ### FR-13 — Missing/stale/conflicting data
 
 The assistant shall refuse to produce a directional recommendation when a material required input is missing, stale beyond the configured report policy, or contradictory without resolution. It shall use `NO ACTION / INSUFFICIENT DATA` or `WATCH` instead.
+
+Reports shall scan normalized safety text before masking allowed candidate labels, so action-like imperatives cannot be hidden inside canonical label phrases. They shall reject account, customer, broker-account, and portfolio identifier forms while preserving ordinary explanatory text and non-PII research filenames.
 
 ### FR-14 — Reproducible reports
 
@@ -332,20 +346,20 @@ The first slice is accepted only when all are true:
 
 ---
 
-## 11. Open decisions before implementation
+## 11. Open decisions before any future integration
 
 | ID | Decision | Current recommendation |
 |---|---|---|
 | OD-01 | Which broker's CSV format is first? | Start with the broker Ilham actually uses; do not build multi-broker abstractions first. |
-| OD-02 | J-Quants plan | Start Free for weekly/monthly research; verify live entitlements immediately before implementation. |
+| OD-02 | J-Quants plan | Deferred; no live provider entitlement or client is part of the current release. |
 | OD-03 | Ledger storage | Local SQLite with append-only source/import metadata and deterministic normalized tables. |
-| OD-04 | Report delivery | Local Markdown plus Discord delivery only after redaction review. |
+| OD-04 | Report delivery | Current release is local Markdown only; Discord delivery is prohibited/deferred. |
 | OD-05 | Initial universe | Ilham-approved watchlist; seed examples must be confirmed before production use. |
 | OD-06 | Benchmark | Choose benchmark per instrument/portfolio (e.g., TOPIX, Nikkei 225, MSCI ACWI, or held ETF), recorded with rationale. |
 | OD-07 | Historical evaluation horizon | Select a date range long enough to include bull, bear, and sideways regimes; no single-period cherry-pick. |
 | OD-08 | Retention | Define local ledger/report/recommendation retention and deletion before importing real personal exports. |
 | OD-09 | Language | Default report language Indonesian; preserve Japanese instrument/source names and labels. |
-| OD-10 | Model/provider policy | Use OpenAI Codex `gpt-5.6-luna` at high reasoning for the Hermes workflow; record the actual model/provider per report and prohibit silent substitution. |
+| OD-10 | Model/provider policy | Future Hermes model choice is deferred; no runtime provider is configured by this release. |
 
 ---
 
@@ -359,4 +373,4 @@ This project is standalone. It does not:
 - create a mobile investment UI;
 - change the Yume iOS roadmap or FDS records.
 
-The Hermes integration is a separate skill/tool/reporting workflow on the Mac mini.
+Any future Hermes integration would be a separate workflow; none is implemented or required by this release.

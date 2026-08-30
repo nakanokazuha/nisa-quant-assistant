@@ -1,3 +1,7 @@
+# Historical research / deferred — not active implementation instructions
+
+Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred roadmap: Hermes/live providers/scheduling/delivery. Prohibited: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
 # Subagent 3 report — broker/API connectivity, workflows, limitations, J-Quants (deleg_63936684)
 
 Research date: 24 Aug 2026. Star counts are snapshots.

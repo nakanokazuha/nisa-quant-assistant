@@ -1,3 +1,7 @@
+# Historical research / deferred — not active implementation instructions
+
+Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred roadmap: Hermes/live providers/scheduling/delivery. Prohibited: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
 # Subagent 1 salvage — LLM frameworks, data sources, backtesting, Japan libs (deleg_c6446f93)
 
 The subagent's final summary was lost to a search-guardrail stop, but its transcript

@@ -12,6 +12,7 @@ from nisa_quant.reports import render_report, validate_report
 from nisa_quant.schema import connect_database, initialize_database
 from nisa_quant.screens import run_screens
 from nisa_quant.sources import import_price_fixture
+from tests.test_time_helpers import current_utc_date
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "synthetic_broker.csv"
@@ -23,13 +24,16 @@ class ReportsAndJournalTests(unittest.TestCase):
         self.connection = connect_database(Path(self.tempdir.name) / "portfolio.sqlite")
         initialize_database(self.connection)
         import_csv(self.connection, FIXTURE, source_name="synthetic-broker")
+        self.connection.execute("UPDATE instruments SET benchmark = 'TOPIX.BENCHMARK', benchmark_identifier_type = 'other', benchmark_identifier_value = 'TOPIX.BENCHMARK' WHERE identifier_value = '1306'")
+        self.connection.commit()
         import_price_fixture(
             self.connection,
             Path(__file__).parent / "fixtures" / "synthetic_prices.csv",
             source_name="synthetic-prices",
         )
-        self.snapshot = calculate_snapshot(self.connection, as_of="2026-08-28")
-        self.candidates = run_screens(self.connection, self.snapshot, as_of="2026-08-28")
+        self.as_of = current_utc_date()
+        self.snapshot = calculate_snapshot(self.connection, as_of=self.as_of)
+        self.candidates = run_screens(self.connection, self.snapshot, as_of=self.as_of)
 
     def tearDown(self) -> None:
         self.connection.close()
@@ -42,27 +46,66 @@ class ReportsAndJournalTests(unittest.TestCase):
             provider="local-deterministic",
             template_version="report-v1",
         )
-        validate_report(report)
+        validate_report(
+            report, snapshot=self.snapshot, candidates=self.candidates,
+            provider="local-deterministic", template_version="report-v1",
+        )
         self.assertIn("Data cutoffs", report)
         self.assertIn("Source list", report)
         self.assertIn("Data warnings", report)
         self.assertIn("Manual review required; no order was placed", report)
         self.assertIn("[SRC-", report)
 
+    def test_structured_report_rejects_unbound_prose_and_filenames(self) -> None:
+        report = render_report(
+            self.snapshot,
+            self.candidates,
+            provider="local-deterministic",
+            template_version="report-v1",
+        )
+        adversaries = (
+            "Management has secured a durable competitive moat.",
+            "X distribution amount is 999 and investors should accumulate.",
+            "taro-yamada-portfolio.csv",
+            "account-summary.csv",
+        )
+        for adversary in adversaries:
+            with self.subTest(adversary=adversary):
+                if adversary.endswith(".csv"):
+                    altered = report.replace("## Source list\n", f"## Source list\n- {adversary}\n", 1)
+                else:
+                    altered = report.replace("## Ranked candidates\n", f"## Ranked candidates\n{adversary}\n", 1)
+                with self.assertRaises(ValueError):
+                    validate_report(
+                        altered, snapshot=self.snapshot, candidates=self.candidates,
+                        provider="local-deterministic", template_version="report-v1",
+                    )
+
+        validate_report(
+            report, snapshot=self.snapshot, candidates=self.candidates,
+            provider="local-deterministic", template_version="report-v1",
+        )
+
     def test_journal_preserves_original_and_appends_benchmark_outcome(self) -> None:
         recommendation_id = record_recommendation(
             self.connection,
             self.candidates[0],
-            data_cutoff="2026-08-28",
+            data_cutoff=self.as_of,
             provider="local-deterministic",
             template_version="report-v1",
         )
         evaluate_recommendation(
             self.connection,
             recommendation_id,
-            evaluation_date="2026-09-30",
+            evaluation_date="2026-09-02",
             observed_price=1100.0,
             benchmark_price=105.0,
+            observed_price_source_id=self.connection.execute(
+                "SELECT id FROM source_records WHERE field = 'price' AND observation_date = '2026-09-01'"
+            ).fetchone()[0],
+            benchmark_price_source_id=self.connection.execute(
+                "SELECT id FROM source_records WHERE field = 'benchmark_price' AND observation_date = '2026-09-01'"
+            ).fetchone()[0],
         )
         original = self.connection.execute(
             "SELECT label, data_cutoff, provider FROM recommendations WHERE id = ?",
@@ -72,9 +115,9 @@ class ReportsAndJournalTests(unittest.TestCase):
             "SELECT benchmark_return, observed_return FROM recommendation_outcomes WHERE recommendation_id = ?",
             (recommendation_id,),
         ).fetchone()
-        self.assertEqual(tuple(original), (self.candidates[0]["label"], "2026-08-28", "local-deterministic"))
+        self.assertEqual(tuple(original), (self.candidates[0]["label"], self.as_of, "local-deterministic"))
         self.assertIsNotNone(outcome[0])
-        self.assertIsNotNone(outcome[1])
+        self.assertIsNone(outcome[1])
 
 
 if __name__ == "__main__":

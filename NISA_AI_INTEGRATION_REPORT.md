@@ -1,6 +1,20 @@
+# Historical research / deferred — not active implementation instructions
+
+Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred roadmap: Hermes/live providers/scheduling/delivery. Prohibited: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
 # NISA × AI Integration Research — Final Report
 
-**Date:** 2026-08-24 · **Prepared by:** Yume (Hermes Agent, model `stealth/ox-alpha`) — executed end-to-end without Codex, using 3 parallel research subagents + supervisor verification against GitHub API/HTML and official docs.
+**Date:** 2026-08-24 · **Prepared by:** Historical research artifact from Yume/Hermes (the `stealth/ox-alpha` string is historical metadata only, not active configuration or a release rule).
+
+## Release boundary (authoritative for the current tree)
+
+Implemented now: local fixture/CSV/SQLite/CLI only.
+
+Deferred/not implemented: Hermes runtime integration, live providers, scheduling, and delivery.
+
+Prohibited boundaries: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
+This report preserves research conclusions and future options. Its proposals, model names, provider references, and architecture diagrams are historical/deferred research only; they are not active routing instructions or dependencies of the local release.
 
 **Goal:** Identify open-source, high-star, proven tools/plugins/repositories for stock & ETF research, signals, and portfolio analytics that Ilham can integrate into Hermes to support **NISA investing** (long-term, monthly accumulation; Japanese stocks + ETFs like 1321/1570/2559/2666, individual names).
 
@@ -15,7 +29,7 @@ The ecosystem splits into four layers:
 3. **Analytics** (deterministic math): QuantStats, vectorbt, bt — small, maintained, perfect for portfolio reporting and strategy sanity-checks.
 4. **Agent glue**: jquants-mcp and edinet-db-mcp plug official Japanese data directly into Hermes via MCP — the highest-value, lowest-risk integration found.
 
-**Headline verdict:** Don't wire an "AI hedge fund" to your NISA account. Wire *data + deterministic analytics* into Hermes, let the approved Codex Luna workflow narrate weekly cited briefs, and keep a human gate on every decision. Evidence (§6): LLM timing strategies lose to buy-and-hold in long-run studies; NISA's tax structure makes loss-harvesting automation pointless anyway.
+**Historical verdict:** Don't wire an "AI hedge fund" to your NISA account. The research recommended data plus deterministic analytics with a human gate; that proposed Hermes narrative workflow is deferred. Evidence (§6): LLM timing strategies lose to buy-and-hold in long-run studies; NISA's tax structure makes loss-harvesting automation pointless anyway.
 
 ---
 
@@ -72,7 +86,7 @@ freqtrade 53.6k★ / jesse 8.4k★ (crypto bots), zipline/backtrader (maintenanc
 
 ---
 
-## 4. Proposed Integrations for Your Hermes (ranked)
+## 4. Deferred future integration proposals (research only; not implemented)
 
 ### #1 — Weekly J-Quants market brief (fit 9/10) *(start here)*
 J-Quants Free account → `jquants-api-client-python` → local SQLite cache → deterministic metrics (index levels, volatility, drawdown from peaks, USDJPY) → **Codex Luna-backed Hermes workflow writes a cited Markdown brief** delivered to Discord every Sunday evening via cron. 12-week delay is irrelevant for weekly long-term context. Cost: ¥0.
@@ -119,7 +133,7 @@ For a single-ticker thesis check (e.g., before adding 7203 or ORIX beyond index)
 
 ---
 
-## 7. Final Verdict
+## 7. Historical research conclusion (not the active release architecture)
 
 **Build the boring stack.** The winning combination for your NISA workflow is not the 99k-star trading circus — it is:
 

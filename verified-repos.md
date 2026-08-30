@@ -1,3 +1,7 @@
+# Historical research / deferred — not active implementation instructions
+
+Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred roadmap: Hermes/live providers/scheduling/delivery. Prohibited: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
 # NISA AI Integration Research — working data (verified GitHub API, 2026-08-23/24)
 
 ## Verified repo stats (GitHub API, stars / language / last push)

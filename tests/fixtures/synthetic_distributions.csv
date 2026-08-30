@@ -1,0 +1,3 @@
+identifier,identifier_type,observation_date,distribution_amount,unit,currency,retrieved_at,freshness_status,citation_location
+VT,other,2026-03-31,0.80,per_unit,USD,2026-04-01T00:00:00+00:00,current,synthetic_distributions.csv:row-2
+VT,other,2026-06-30,0.85,per_unit,USD,2026-07-01T00:00:00+00:00,current,synthetic_distributions.csv:row-3

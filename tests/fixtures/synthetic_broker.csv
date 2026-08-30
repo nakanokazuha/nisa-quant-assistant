@@ -1,7 +1,7 @@
-取引日,口座区分,銘柄コード,銘柄名,取引区分,数量,単価,手数料,通貨,分配金,備考
-2026-01-15,NISA,1306,TOPIX ETF,BUY,10,1000,0,JPY,,synthetic purchase
-2026-02-01,特定口座,9984,SoftBank Group,BUY,5,2000,0,JPY,,synthetic taxable holding
-2026-02-10,NISA,,,CASH,,-5000,0,JPY,,synthetic cash movement
-2026-03-20,NISA,1306,TOPIX ETF,DISTRIBUTION,10,0,0,JPY,120,synthetic distribution
-2026-04-01,謎口座,6758,Sample Security,BUY,2,500,0,JPY,,unknown account
-not-a-date,NISA,1306,TOPIX ETF,BUY,broken,1000,0,JPY,,malformed row
+取引日,口座区分,銘柄コード,銘柄コード種別,銘柄名,取引区分,数量,単価,手数料,通貨,分配金,備考
+2026-01-15,NISA,1306,jpx_code,TOPIX ETF,BUY,10,1000,0,JPY,,synthetic purchase
+2026-02-01,特定口座,9984,jpx_code,SoftBank Group,BUY,5,2000,0,JPY,,synthetic taxable holding
+2026-02-10,NISA,,,,CASH,,-5000,0,JPY,,synthetic cash movement
+2026-03-20,NISA,1306,jpx_code,TOPIX ETF,DISTRIBUTION,10,0,0,JPY,120,synthetic distribution
+2026-04-01,謎口座,6758,jpx_code,Sample Security,BUY,2,500,0,JPY,,unknown account
+not-a-date,NISA,1306,jpx_code,TOPIX ETF,BUY,broken,1000,0,JPY,,malformed row

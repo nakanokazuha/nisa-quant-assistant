@@ -1,3 +1,7 @@
+# Historical research / deferred — not active implementation instructions
+
+Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/not implemented: Hermes runtime integration, live providers, scheduling, and delivery. Prohibited boundaries: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
 \n### site:rakuten-sec.co.jp API portfolio holdings Rakuten Securities official API\nmember.rakuten-sec.co.jp | https://member.rakuten-sec.co.jp/ | 楽天証券＝https://member.rakuten-sec.co.jp/.\nRakuten Securities Design | https://design.rakuten-sec.co.jp/ | Copyright 2023 Rakuten Securities Design.\n楽天証券 | ネット証券（株・FX・投資信託･確定拠出年金･NISA） | https://www.rakuten-sec.co.jp/ |  …(+16547 chars)
 12:43:08 tool     | -> web_search(site:jpx-jquants.com API pricing plan...)
 12:43:08 tool     | -> web_search(site:jpx-jquants.com/en J-Quants API ...)
@@ -27,6 +31,10 @@
 12:43:29 result   | execute_code ERROR 0.4s: {"status": "error", "output": "\n--- stderr ---\nTraceback (most recent call last):\n File \"/var/folders/n_/rc0pd1c95rz_vzgpck4s_pym0000gn/T/hermes_sandbox_pixq2gza/script.py\", line 15, in <module>\n for x in r['results']:\n ~^^^^^^^^^^^\nKeyError: 'results'\n
 
 =====
+
+# Historical research / deferred — not active implementation instructions
+
+Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred roadmap: Hermes/live providers/scheduling/delivery. Prohibited: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
 
 ", "workspace": "/Users/user/.hermes/cache/browser-use/workspace/sa-0-40340f25", "stderr": "browser-harness: Chrome is asking \"Allow remote debugging?\" — run `browser-harness mac-approve` in another shell or click Allow to continue.\nbrowser-harness: Chrome is asking \"Allow remote debugging?\". Click Allow in Chrome, then retry browser work.\nbrowse …(+113 chars)
 12:44:41 tool     | -> execute_code(from hermes_tools import web_search q...)

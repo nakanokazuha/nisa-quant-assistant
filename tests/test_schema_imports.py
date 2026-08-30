@@ -101,15 +101,8 @@ class SchemaAndImportTests(unittest.TestCase):
             ).fetchall()
             rows = [tuple(row) for row in rows]
             self.assertIn(("jpx_code", "1306"), rows)
-            self.assertIn(("yahoo_symbol", "1306.T"), rows)
-            self.assertNotEqual(
-                connection.execute(
-                    "SELECT id FROM instruments WHERE identifier_type = 'jpx_code' AND identifier_value = '1306'"
-                ).fetchone()[0],
-                connection.execute(
-                    "SELECT id FROM instruments WHERE identifier_type = 'yahoo_symbol' AND identifier_value = '1306.T'"
-                ).fetchone()[0],
-            )
+            self.assertNotIn(("yahoo_symbol", "1306.T"), rows)
+            self.assertEqual(len(rows), 2)
 
 
 if __name__ == "__main__":

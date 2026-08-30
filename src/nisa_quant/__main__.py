@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import asdict
 from pathlib import Path
 
@@ -13,7 +14,8 @@ from .metrics import calculate_snapshot
 from .reports import render_report
 from .schema import connect_database, initialize_database
 from .screens import run_screens
-from .sources import import_price_fixture
+from .sources import import_distribution_fixture, import_price_fixture
+from .watchlist import add_watchlist_item
 
 
 def _database(path: str):
@@ -38,6 +40,26 @@ def build_parser() -> argparse.ArgumentParser:
     prices = subparsers.add_parser("import-prices", help="import a documented local price fixture")
     prices.add_argument("--db", default="data/nisa_quant.sqlite")
     prices.add_argument("--csv", required=True)
+
+    distributions = subparsers.add_parser("import-distributions", help="import a documented local ETF distribution fixture")
+    distributions.add_argument("--db", default="data/nisa_quant.sqlite")
+    distributions.add_argument("--csv", required=True)
+
+    watchlist = subparsers.add_parser("watchlist-add", help="append a typed local watchlist version")
+    watchlist.add_argument("--db", default="data/nisa_quant.sqlite")
+    watchlist.add_argument("--identifier-value", required=True)
+    watchlist.add_argument("--identifier-type", required=True)
+    watchlist.add_argument("--display-name", required=True)
+    watchlist.add_argument("--asset-type", required=True)
+    watchlist.add_argument("--market", required=True)
+    watchlist.add_argument("--currency", required=True)
+    watchlist.add_argument("--benchmark")
+    watchlist.add_argument("--benchmark-identifier-type")
+    watchlist.add_argument("--benchmark-identifier-value")
+    watchlist.add_argument("--notes", default="")
+    watchlist.add_argument("--effective-date")
+    watchlist.add_argument("--observed-at")
+
 
     snapshot = subparsers.add_parser("snapshot", help="calculate a deterministic JSON snapshot")
     snapshot.add_argument("--db", default="data/nisa_quant.sqlite")
@@ -65,8 +87,10 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--db", default="data/nisa_quant.sqlite")
     evaluate.add_argument("--recommendation-id", type=int, required=True)
     evaluate.add_argument("--date", required=True)
-    evaluate.add_argument("--observed-price", type=float, required=True)
-    evaluate.add_argument("--benchmark-price", type=float, required=True)
+    evaluate.add_argument("--observed-price", type=float)
+    evaluate.add_argument("--benchmark-price", type=float)
+    evaluate.add_argument("--observed-source-id", required=True)
+    evaluate.add_argument("--benchmark-source-id", required=True)
     return parser
 
 
@@ -81,15 +105,37 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "import-csv":
             result = import_csv(connection, Path(args.csv), source_name="synthetic-broker")
-            print(json.dumps(asdict(result), ensure_ascii=False))
+            print(json.dumps(asdict(result), ensure_ascii=False, allow_nan=False))
         elif args.command == "import-prices":
             result = import_price_fixture(connection, Path(args.csv), source_name="synthetic-prices")
-            print(json.dumps({"accepted_rows": result.accepted_rows, "source_ids": result.source_ids}))
+            print(json.dumps({"accepted_rows": result.accepted_rows, "source_ids": result.source_ids}, allow_nan=False))
+        elif args.command == "import-distributions":
+            result = import_distribution_fixture(connection, Path(args.csv), source_name="synthetic-distributions")
+            print(json.dumps({"accepted_rows": result.accepted_rows, "source_ids": result.source_ids}, allow_nan=False))
+        elif args.command == "watchlist-add":
+            if (args.benchmark_identifier_type is None) != (args.benchmark_identifier_value is None):
+                raise ValueError("benchmark identifier type and value must be supplied together")
+            version_id = add_watchlist_item(
+                connection,
+                identifier_value=args.identifier_value,
+                identifier_type=args.identifier_type,
+                display_name=args.display_name,
+                asset_type=args.asset_type,
+                market=args.market,
+                currency=args.currency,
+                benchmark=args.benchmark,
+                notes=args.notes,
+                effective_date=args.effective_date,
+                observed_at=args.observed_at,
+                benchmark_identifier_type=args.benchmark_identifier_type,
+                benchmark_identifier_value=args.benchmark_identifier_value,
+            )
+            print(f"watchlist version {version_id}")
         elif args.command == "snapshot":
-            print(json.dumps(calculate_snapshot(connection, as_of=args.as_of), ensure_ascii=False, indent=2))
+            print(json.dumps(calculate_snapshot(connection, as_of=args.as_of), ensure_ascii=False, indent=2, allow_nan=False))
         elif args.command == "screens":
             snapshot = calculate_snapshot(connection, as_of=args.as_of)
-            print(json.dumps(run_screens(connection, snapshot, as_of=args.as_of), ensure_ascii=False, indent=2))
+            print(json.dumps(run_screens(connection, snapshot, as_of=args.as_of), ensure_ascii=False, indent=2, allow_nan=False))
         elif args.command == "report":
             snapshot = calculate_snapshot(connection, as_of=args.as_of)
             candidates = run_screens(connection, snapshot, as_of=args.as_of)
@@ -100,11 +146,23 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "record-recommendation":
             snapshot = calculate_snapshot(connection, as_of=args.as_of)
             candidates = run_screens(connection, snapshot, as_of=args.as_of)
-            recommendation_id = record_recommendation(connection, candidates[args.index], data_cutoff=args.as_of, provider=args.provider, template_version=args.template_version)
+            if not candidates:
+                raise ValueError("no candidates are available to record")
+            if not 0 <= args.index < len(candidates):
+                raise ValueError(f"candidate index {args.index} is out of range")
+            recommendation_id = record_recommendation(connection, candidates[args.index], data_cutoff=args.as_of, provider=args.provider, template_version=args.template_version, snapshot=snapshot)
             print(recommendation_id)
         elif args.command == "evaluate-recommendation":
-            evaluate_recommendation(connection, args.recommendation_id, evaluation_date=args.date, observed_price=args.observed_price, benchmark_price=args.benchmark_price)
+            evaluate_recommendation(
+                connection, args.recommendation_id, evaluation_date=args.date,
+                observed_price=args.observed_price, benchmark_price=args.benchmark_price,
+                observed_price_source_id=args.observed_source_id,
+                benchmark_price_source_id=args.benchmark_source_id,
+            )
             print(f"evaluated {args.recommendation_id}")
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     finally:
         connection.close()
     return 0

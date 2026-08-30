@@ -3,3 +3,5 @@ identifier,identifier_type,observation_date,price,currency,retrieved_at,freshnes
 1306,jpx_code,2026-08-27,1110,JPY,2026-08-28T00:00:00+00:00,current,synthetic_prices.csv:row-3, no
 9984,jpx_code,2026-01-01,1100,JPY,2026-08-28T00:00:00+00:00,stale,synthetic_prices.csv:row-4,no
 TOPIX.BENCHMARK,other,2026-08-27,100,JPY,2026-08-28T00:00:00+00:00,current,synthetic_prices.csv:row-5,yes
+1306,jpx_code,2026-09-01,1100,JPY,2026-09-02T00:00:00+00:00,current,synthetic_prices.csv:row-6,no
+TOPIX.BENCHMARK,other,2026-09-01,105,JPY,2026-09-02T00:00:00+00:00,current,synthetic_prices.csv:row-7,yes

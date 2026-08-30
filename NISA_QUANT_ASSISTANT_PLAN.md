@@ -1,27 +1,41 @@
+# Historical research / deferred — not active implementation instructions
+
+Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred roadmap: Hermes/live providers/scheduling/delivery. Prohibited: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
 # NISA Quant Assistant Implementation Plan
 
-> **For Hermes:** This is a standalone Hermes/Yume investment workflow. All implementation work must be delegated through the `codex-orchestrator` skill; do not implement the production code directly in Hermes. Executor routing is `gpt-5.6-luna` with high reasoning; reviewer routing is `gpt-5.6-sol` with medium reasoning.
+> **Historical planning note:** This document records a proposed Hermes/Yume investment workflow. It is not an active routing instruction; no Hermes runtime, orchestrator, or model-provider routing is implemented in the current release.
 
 **Goal:** Build a local-first, advisory-only quant assistant that turns sourced Japan/international market data and broker CSV exports into deterministic metrics, cited BUY/HOLD/SELL candidate reports, and recommendation outcome tracking.
 
-**Architecture:** A standalone Hermes skill/tool workflow on the Mac mini. Data adapters feed a local SQLite ledger; deterministic Python calculations produce facts and candidate screens; the explicitly approved Hermes model produces cited narrative reports. Broker write access, order endpoints, automatic dispatch, and Yume iOS integration are deliberately absent.
+**Architecture:** The implemented architecture is a local Python CLI with fixture/CSV ingestion, SQLite, deterministic calculations, screens, cited Markdown, and journal evaluation. Hermes narrative routing, live adapters, and delivery were historical future proposals.
 
-**Tech Stack:** Hermes skill/cron, Python 3.11+ where available, SQLite, CSV, Markdown, J-Quants V2, yfinance `.T` symbols, issuer/JPX/EDINET/TDnet sources, QuantStats/vectorbt only where justified, Discord delivery after redaction review. Implementation is executed through the Codex orchestrator; executor routing is `gpt-5.6-luna` with high reasoning and reviewer routing is `gpt-5.6-sol` with medium reasoning.
+**Tech Stack:** Implemented: Python, SQLite, CSV fixtures, Markdown, and the local CLI. Historical deferred proposals included Hermes/cron, J-Quants V2, yfinance, issuer/JPX/EDINET/TDnet sources, optional analytics libraries, and Discord delivery; none are active dependencies or routing instructions.
 
 **Spec:** `/Users/user/Documents/Yume/nisa-research/NISA_QUANT_ASSISTANT_SPEC.md`  
 **Project directory:** `/Users/user/Documents/Yume/nisa-research/`  
 **Pre-development rule:** Keep artifacts and implementation local/uncommitted until the pre-development baseline is complete and Ilham explicitly authorizes implementation.
 
+## Current release boundary
+
+Implemented now: local fixture/CSV/SQLite/CLI only.
+
+Deferred/not implemented: Hermes runtime integration, live providers, scheduling, and delivery.
+
+Prohibited boundaries: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+
+The gates and tasks below are historical roadmap material unless they describe the implemented local slice. They cannot be read as active routing instructions or authorization to add deferred integrations.
+
 ---
 
-## 0. Governance and implementation gates
+## 0. Historical governance and future implementation gates
 
 ### Gate G0 — Spec approval
 
 **Entry:** This plan and the standalone specification exist.  
 **Exit:** Ilham explicitly approves the spec/plan for implementation. “LGTM” on the research proposal is not automatically approval of every implementation detail.
 
-### Gate G1 — Source and data contract
+### Gate G1 — Source and data contract (historical live-provider gate; deferred)
 
 **Exit evidence:** J-Quants live plan/endpoint entitlement checked; first broker CSV format obtained in redacted form; selected issuer/filing sources documented; identifiers and timestamp policy fixed.
 
@@ -29,19 +43,19 @@
 
 **Exit evidence:** Redacted fixtures import into SQLite, deterministic calculations pass, and safe labels appear without any real credential or live broker login.
 
-### Gate G3 — Hermes report slice
+### Gate G3 — Local report slice (Hermes integration deferred)
 
-**Exit evidence:** Codex-generated implementation produces a cited Markdown report from a fixed snapshot; numeric facts are sourced/computed; missing/stale/conflicting data produces safe output.
+**Exit evidence:** The local implementation produces a cited Markdown report from a fixed snapshot; numeric facts are sourced/computed; missing/stale/conflicting data produces safe output. Hermes/Codex runtime generation is deferred.
 
 ### Gate G4 — Recommendation journal/evaluation
 
 **Exit evidence:** Recommendations can be stored with cutoff/model/template/source metadata and evaluated later against a passive benchmark without look-ahead.
 
-### Gate G5 — Real-data opt-in
+### Gate G5 — Real-data opt-in (deferred/not implemented)
 
 **Exit:** Only after privacy/retention/redaction review and Ilham's explicit approval to import real personal CSVs or configure credentials. No broker write credential is ever accepted.
 
-### Gate G6 — Recurring delivery
+### Gate G6 — Recurring delivery (deferred/not implemented)
 
 **Exit evidence:** A scheduled weekly/monthly job can produce and deliver a redacted report; failed, stale, or unavailable inputs are visible and do not create fabricated continuity.
 
@@ -83,7 +97,7 @@
 
 ---
 
-## 2. Source and identifier contract
+## 2. Source and identifier contract (local records implemented; live providers deferred)
 
 **Objective:** Make every fact traceable before writing a screen or report.
 
@@ -149,7 +163,7 @@
 
 ---
 
-## 5. Candidate screens and recommendation policy
+## 5. Candidate screens and recommendation policy (local safe screens implemented; advanced narrative deferred)
 
 **Objective:** Turn deterministic evidence into ranked candidates without pretending to predict certainty.
 
@@ -180,7 +194,7 @@
 
 ---
 
-## 6. Cited Hermes/Codex-Luna report generation
+## 6. Cited Hermes/Codex-Luna report generation (deferred/not implemented)
 
 **Objective:** Let Hermes explain sourced evidence while deterministic components retain numeric authority.
 
@@ -253,7 +267,7 @@
 
 ---
 
-## 9. Hermes skill and recurring jobs
+## 9. Hermes skill and recurring jobs (deferred/not implemented)
 
 **Objective:** Make the workflow callable from Hermes without creating a separate mobile application.
 
@@ -298,7 +312,7 @@ Each optional component requires a separate source/license/dependency/security r
 
 ---
 
-## 11. Verification matrix
+## 11. Verification matrix (historical target; current release uses local checks only)
 
 | Area | Evidence required | Pass condition |
 |---|---|---|
@@ -332,7 +346,7 @@ Each optional component requires a separate source/license/dependency/security r
 
 ---
 
-## 13. Suggested execution order
+## 13. Historical suggested execution order (not an active routing plan)
 
 ```text
 G0 spec approval
@@ -352,7 +366,7 @@ Do not skip the fixture slice. Do not configure real credentials or recurring de
 
 ---
 
-## 14. Definition of done for v0
+## 14. Historical definition of done for a future integrated v0
 
 The standalone NISA Quant Assistant is ready for normal use only when:
 
