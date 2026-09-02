@@ -11,6 +11,7 @@ from pathlib import Path
 from .imports import import_csv
 from .journal import evaluate_recommendation, record_recommendation
 from .metrics import calculate_snapshot
+from .phase2 import phase2_evidence_report, refresh_phase2_configured, refresh_phase2_fixtures
 from .reports import render_report
 from .schema import connect_database, initialize_database
 from .screens import run_screens
@@ -36,6 +37,10 @@ def build_parser() -> argparse.ArgumentParser:
     importer = subparsers.add_parser("import-csv", help="import the documented synthetic broker CSV")
     importer.add_argument("--db", default="data/nisa_quant.sqlite")
     importer.add_argument("--csv", required=True)
+    importer.add_argument(
+        "--retrieved-at",
+        help="explicit UTC retrieval timestamp for deterministic fixture imports",
+    )
 
     prices = subparsers.add_parser("import-prices", help="import a documented local price fixture")
     prices.add_argument("--db", default="data/nisa_quant.sqlite")
@@ -91,6 +96,37 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--benchmark-price", type=float)
     evaluate.add_argument("--observed-source-id", required=True)
     evaluate.add_argument("--benchmark-source-id", required=True)
+
+    phase2_refresh = subparsers.add_parser(
+        "phase2-refresh-fixtures",
+        help="refresh the read-only Phase 2 evidence layer from local fixtures",
+    )
+    phase2_refresh.add_argument("--db", default="data/nisa_quant.sqlite")
+    phase2_refresh.add_argument("--universe-csv", required=True)
+    phase2_refresh.add_argument("--market-csv", required=True)
+    phase2_refresh.add_argument("--as-of", required=True)
+    phase2_refresh.add_argument("--request-id", required=True)
+    phase2_refresh.add_argument("--sec-json")
+    phase2_refresh.add_argument("--sec-ticker")
+    phase2_refresh.add_argument("--sec-cik")
+    phase2_refresh.add_argument("--news-xml")
+
+    phase2_configured = subparsers.add_parser(
+        "phase2-refresh-config", help="refresh configured read-only Phase 2 providers",
+    )
+    phase2_configured.add_argument("--db", default="data/nisa_quant.sqlite")
+    phase2_configured.add_argument("--config", required=True)
+    phase2_configured.add_argument("--universe-csv", required=True)
+    phase2_configured.add_argument("--as-of", required=True)
+    phase2_configured.add_argument("--request-id", required=True)
+
+    phase2_evidence = subparsers.add_parser(
+        "phase2-evidence", help="inspect a read-only Phase 2 evidence snapshot",
+    )
+    phase2_evidence.add_argument("--db", default="data/nisa_quant.sqlite")
+    phase2_evidence.add_argument("--as-of", required=True)
+    phase2_evidence.add_argument("--output")
+    phase2_evidence.add_argument("--scope-id")
     return parser
 
 
@@ -104,7 +140,10 @@ def main(argv: list[str] | None = None) -> int:
     connection = _database(args.db)
     try:
         if args.command == "import-csv":
-            result = import_csv(connection, Path(args.csv), source_name="synthetic-broker")
+            result = import_csv(
+                connection, Path(args.csv), source_name="synthetic-broker",
+                retrieved_at=args.retrieved_at,
+            )
             print(json.dumps(asdict(result), ensure_ascii=False, allow_nan=False))
         elif args.command == "import-prices":
             result = import_price_fixture(connection, Path(args.csv), source_name="synthetic-prices")
@@ -160,7 +199,40 @@ def main(argv: list[str] | None = None) -> int:
                 benchmark_price_source_id=args.benchmark_source_id,
             )
             print(f"evaluated {args.recommendation_id}")
-    except ValueError as exc:
+        elif args.command == "phase2-refresh-fixtures":
+            result = refresh_phase2_fixtures(
+                connection,
+                universe_path=Path(args.universe_csv),
+                market_path=Path(args.market_csv),
+                as_of=args.as_of,
+                request_id=args.request_id,
+                sec_path=Path(args.sec_json) if args.sec_json else None,
+                sec_ticker=args.sec_ticker,
+                sec_cik=args.sec_cik,
+                news_path=Path(args.news_xml) if args.news_xml else None,
+            )
+            print(json.dumps(asdict(result), ensure_ascii=False, allow_nan=False))
+            if result.status == "failed":
+                return 2
+        elif args.command == "phase2-refresh-config":
+            result = refresh_phase2_configured(
+                connection, config_path=Path(args.config), universe_path=Path(args.universe_csv),
+                as_of=args.as_of, request_id=args.request_id,
+            )
+            print(json.dumps(asdict(result), ensure_ascii=False, allow_nan=False))
+            if result.status == "failed":
+                return 2
+        elif args.command == "phase2-evidence":
+            report = phase2_evidence_report(connection, as_of=args.as_of, scope_id=args.scope_id)
+            serialized = json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False)
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(serialized + "\n", encoding="utf-8")
+                print(f"wrote {output}")
+            else:
+                print(serialized)
+    except (OSError, TypeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     finally:

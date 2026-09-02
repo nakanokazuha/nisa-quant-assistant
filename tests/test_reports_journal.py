@@ -2,6 +2,7 @@ import tempfile
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -12,7 +13,6 @@ from nisa_quant.reports import render_report, validate_report
 from nisa_quant.schema import connect_database, initialize_database
 from nisa_quant.screens import run_screens
 from nisa_quant.sources import import_price_fixture
-from tests.test_time_helpers import current_utc_date
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "synthetic_broker.csv"
@@ -23,7 +23,10 @@ class ReportsAndJournalTests(unittest.TestCase):
         self.tempdir = tempfile.TemporaryDirectory()
         self.connection = connect_database(Path(self.tempdir.name) / "portfolio.sqlite")
         initialize_database(self.connection)
-        import_csv(self.connection, FIXTURE, source_name="synthetic-broker")
+        # The fixture is historical; freeze importer provenance before the
+        # historical cutoff so this test does not depend on the wall clock.
+        with patch("nisa_quant.imports.utc_now", return_value="2026-08-28T00:00:00+00:00"):
+            import_csv(self.connection, FIXTURE, source_name="synthetic-broker")
         self.connection.execute("UPDATE instruments SET benchmark = 'TOPIX.BENCHMARK', benchmark_identifier_type = 'other', benchmark_identifier_value = 'TOPIX.BENCHMARK' WHERE identifier_value = '1306'")
         self.connection.commit()
         import_price_fixture(
@@ -31,7 +34,7 @@ class ReportsAndJournalTests(unittest.TestCase):
             Path(__file__).parent / "fixtures" / "synthetic_prices.csv",
             source_name="synthetic-prices",
         )
-        self.as_of = current_utc_date()
+        self.as_of = "2026-08-30"
         self.snapshot = calculate_snapshot(self.connection, as_of=self.as_of)
         self.candidates = run_screens(self.connection, self.snapshot, as_of=self.as_of)
 

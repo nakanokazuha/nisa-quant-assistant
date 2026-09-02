@@ -1,18 +1,24 @@
-# Historical research / deferred — not active implementation instructions
+# Phase 2 amendment — active implementation instructions
 
-Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred roadmap: Hermes/live providers/scheduling/delivery. Prohibited: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+Active boundary: Phase 2 is a read-only evidence layer for US-listed S&P 500 constituent equities. It accepts explicit point-in-time universe inputs, daily/end-of-day market observations, verified SEC filing/fact metadata, and explicitly configured RSS evidence; it persists normalized provenance and produces evidence/context snapshots only.
+
+Compatibility boundary: the existing local fixture/CSV/SQLite/CLI deterministic core remains supported. Phase 3 synthesis, prediction, directional verdicts, order execution, broker access, credentials, scheduler/delivery, and Yume iOS changes remain prohibited or deferred.
+
+The historical Japan-first proposal below is retained as legacy compatibility/reference material. Where it conflicts with this amendment, this Phase 2 amendment and the task contract govern.
+
+Historical research / deferred — not active implementation instructions: the legacy sections below preserve the prior local release context.
 
 # NISA Quant Assistant — Product Specification
 
-**Status:** Current local release boundary plus deferred product specification
+**Status:** Phase 2 evidence layer amendment plus legacy deferred product specification
 **Project boundary:** Standalone local Python research package
 **Relationship to Yume iOS:** None. This specification does not modify, extend, or authorize work in `/Users/user/Documents/Yume/yume-ios`.  
-**Implementation:** The current release is implemented and verified locally by the Python CLI; no Hermes/Codex runtime routing is active.
+**Implementation:** Phase 2 fixture refresh, configured read-only provider wiring, SQLite evidence persistence, and evidence-only CLI output are locally implemented and fixture/injected-transport verified; live retrieval remains configuration-dependent and no Hermes/Codex runtime routing is active.
 **Date:** 2026-08-24 (Asia/Tokyo)
 
 ---
 
-## Release boundary (authoritative for the current tree)
+## Legacy release boundary (superseded for Phase 2)
 
 Implemented now: local fixture/CSV/SQLite/CLI only.
 
@@ -133,9 +139,9 @@ No component may silently convert a stale cache, model inference, or missing val
 
 The system shall maintain a user-editable watchlist of security identifiers, display names, asset type, market/exchange, currency, benchmark, and notes. Japanese identifiers may use JPX codes and Yahoo Finance `.T` symbols where applicable.
 
-### FR-02 — Market data ingestion (current slice: local fixtures only)
+### FR-02 — Legacy compatibility market ingestion (Phase 2 is specified above)
 
-The current release supports source-backed local price and distribution fixtures. J-Quants V2 and yfinance are deferred future providers, not active clients in this repository. Each local record retains source, UTC-normalized retrieval time, observation date, and freshness/availability status.
+The legacy compatibility commands support source-backed local price and distribution fixtures. J-Quants V2 and yfinance remain deferred future providers, not active clients in this repository. The active Phase 2 market path is documented in `docs/phase2-sources.md` and uses only its explicitly configured daily adapter or injected fixture provider; each record retains source, UTC-normalized retrieval time, observation date, and freshness/availability status.
 
 The first implementation shall not assume that a free source provides real-time data. J-Quants Free's reported 12-week delay and rate limits must be visible in the data status.
 

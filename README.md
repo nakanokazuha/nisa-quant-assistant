@@ -1,8 +1,44 @@
-# NISA Quant Assistant — first local slice
+# NISA Quant Assistant — Phase 2 evidence slice
 
-This standalone Python package is a local-first, advisory-only research tool. It imports only the documented synthetic broker CSV and local price fixtures, stores normalized records in SQLite, computes portfolio facts without a language model, screens with safe data-quality fallbacks, renders cited Markdown, and keeps append-only recommendation outcomes.
+This standalone Python package is a local-first, read-only evidence tool for US-listed S&P 500 constituent equities. Phase 2 accepts an explicit point-in-time universe, daily OHLCV observations, SEC filing/fact metadata, and configured RSS evidence; it stores normalized records in SQLite and emits evidence/context snapshots without predictions, directional verdicts, or trade actions.
 
-It has no network client, broker login, broker write access, order endpoint, dispatch path, scheduled delivery, mobile app, or Hermes integration. No profitability or live-data claim is made.
+The existing local broker CSV, Japan fixture, deterministic metric, screen, report, and journal commands remain available for compatibility. They are not called by the Phase 2 refresh path. No broker login/write access, order endpoint, dispatch path, scheduled delivery, mobile app, Hermes integration, or profitability claim exists.
+
+## Phase 2 source status
+
+See [`docs/phase2-sources.md`](docs/phase2-sources.md) for verified endpoint references, freshness/licensing assumptions, and manual setup. The checked-in Phase 2 fixtures are synthetic and prove the same normalization path without secrets or live retrieval.
+
+Implemented and reproducible:
+
+- strict universe CSV with effective date, source/version, retrieval time, point-in-time/look-ahead status, and survivorship-bias status;
+- injected market, SEC, RSS, and explicitly named flow-proxy parsers with SQLite idempotency and failure audit;
+- evidence-only snapshot CLI: `phase2-refresh-fixtures`, `phase2-refresh-config`, and `phase2-evidence`.
+
+Each successful refresh persists a deterministic membership scope. `phase2-evidence`
+uses the latest non-failed refresh scope at or before `--as-of`; callers that have
+multiple direct request scopes must pass the explicit `--scope-id` (or both the
+`request_id` and, when needed, `scope_id` arguments to
+`phase2_evidence_report`) rather than allowing an ambiguous report selection.
+Direct market and evidence APIs create a request-bound scope when `scope_id` is
+omitted. Their usable, conflict, and failure results remain bound to that exact
+request scope; legacy rows with only NULL bindings are not treated as current
+request data.
+
+Configured but optional:
+
+- Alpha Vantage `TIME_SERIES_DAILY` for daily OHLCV; it requires a caller-supplied API key and is never configured by the repository;
+- SEC `data.sec.gov` submissions and Company Facts JSON; public access still requires a declared User-Agent and bounded rate;
+- explicitly configured RSS feeds whose terms permit the selected metadata or bounded-excerpt policy.
+
+The configured command requires a caller-supplied universe CSV and JSON source
+configuration: `phase2-refresh-config --config CONFIG --universe-csv CSV
+--db DB --as-of YYYY-MM-DD --request-id ID`. It uses only the Alpha Vantage
+daily adapter, SEC submissions/Company Facts adapters, and an explicitly
+mapped RSS adapter. Missing keys, SEC User-Agent text, or RSS terms/aliases
+are reported as configuration-required failures; no secret is persisted or
+printed.
+
+Deferred: live S&P constituent downloads, paid/licensed news, options or short-interest vendors, issuer scraping, broker data, scheduling, synthesis, predictions, recommendations, and trading.
 
 ## Local commands
 
@@ -23,13 +59,29 @@ database="$temporary_directory/nisa-quant.sqlite"
 report="$temporary_directory/nisa-report.md"
 PYTHONPATH=src python3 -m nisa_quant init-db --db "$database"
 PYTHONPATH=src python3 -m nisa_quant watchlist-add --db "$database" --identifier-value 1306 --identifier-type jpx_code --display-name "TOPIX ETF" --asset-type ETF --market JPX --currency JPY --benchmark TOPIX.BENCHMARK --benchmark-identifier-type other --benchmark-identifier-value TOPIX.BENCHMARK --notes synthetic --effective-date 2026-08-01 --observed-at 2026-08-01T00:00:00+00:00
-PYTHONPATH=src python3 -m nisa_quant import-csv --db "$database" --csv tests/fixtures/synthetic_broker.csv
+PYTHONPATH=src python3 -m nisa_quant import-csv --db "$database" --csv tests/fixtures/synthetic_broker.csv --retrieved-at 2026-08-30T00:00:00+00:00
 PYTHONPATH=src python3 -m nisa_quant import-prices --db "$database" --csv tests/fixtures/synthetic_prices.csv
 PYTHONPATH=src python3 -m nisa_quant import-distributions --db "$database" --csv tests/fixtures/synthetic_distributions.csv
 PYTHONPATH=src python3 -m nisa_quant snapshot --db "$database" --as-of 2026-08-30
 PYTHONPATH=src python3 -m nisa_quant screens --db "$database" --as-of 2026-08-30
 PYTHONPATH=src python3 -m nisa_quant report --db "$database" --as-of 2026-08-30 --output "$report"
 ```
+
+Phase 2 fixture-backed evidence flow:
+
+```bash
+PYTHONPATH=src python3 -m nisa_quant phase2-refresh-fixtures --db "$database" --universe-csv tests/fixtures/phase2_universe.csv --market-csv tests/fixtures/phase2_market.csv --as-of 2026-09-01 --request-id phase2-demo-1
+PYTHONPATH=src python3 -m nisa_quant phase2-evidence --db "$database" --as-of 2026-09-01
+```
+
+The Phase 2 output contains only universe, market, filing/news/alert evidence, freshness, provenance, and warnings. It does not invoke `screens`, `report`, or `journal`.
+
+Live provider transport resolves configured hostnames before a request and fails
+closed if resolution is uncertain or returns a private, loopback, link-local,
+reserved, or IPv4-mapped address. RSS is public HTTPS only and receives no
+provider secrets; redirects are rejected.
+
+## Legacy compatibility commands
 
 Recommendation metadata can be recorded and evaluated later:
 
@@ -68,8 +120,8 @@ Outcome replay also validates the persisted snapshot against the strict finite J
 
 Legacy databases may still have nullable source identifier-type columns. Those rows are retained for audit but fail closed for typed security valuation and ledger calculations until explicitly backfilled; no migration guesses an identifier type. Pre-versioning watchlist rows are migrated idempotently on initialization, preserving valid effective/observed metadata; when no observed field exists, initialization seeds the current aware UTC instant and date because older history is unavailable. Valid, unambiguous legacy position cost basis is preserved on that migration.
 
-## Safety and data quality
+## Legacy compatibility safety and data quality
 
-The only directional vocabulary permitted by this slice is `BUY CANDIDATE`, `HOLD`, `SELL / REDUCE CANDIDATE`, `WATCH`, and `NO ACTION / INSUFFICIENT DATA`. Material missing, stale, conflicting, or unavailable inputs prevent a directional screen result. Reports include cutoffs, warnings, source IDs, evidence quality, metrics, counter-evidence, invalidation conditions, and the statement: “Manual review required; no order was placed.”
+The older deterministic compatibility screen may emit bounded manual-review labels such as `WATCH` or `NO ACTION / INSUFFICIENT DATA`; those commands are not part of Phase 2. Phase 2 emits no directional label, forecast, order, or broker action. Its material missing, stale, conflicting, or unavailable inputs remain evidence warnings or fail-closed records.
 
 Do not put real broker exports, account numbers, credentials, raw personal data, or generated personal reports in source control. The `.gitignore` protects local data/report paths; review any input filename before importing it.

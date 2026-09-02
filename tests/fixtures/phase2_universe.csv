@@ -1,0 +1,2 @@
+universe_id,effective_date,membership_status,ticker,cik,issuer_name,exchange,source_url,source_version,retrieved_at,lookahead_bias_status,survivorship_bias_status
+sp500-fixture-2026-08-31,2026-08-31,active,ABC,0000000001,Synthetic Corp,NYSE,https://www.spglobal.com/spdji/en/indices/equity/sp-500/,sp500-fixture-v1,2026-08-31T12:00:00+09:00,point_in_time,survivorship_risk_disclosed

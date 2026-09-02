@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from .sources import add_source_record, safe_add, safe_divide, safe_multiply, utc_now
+from .sources import add_source_record, normalize_retrieved_at, safe_add, safe_divide, safe_multiply, utc_now
 
 
 EXPECTED_COLUMNS = (
@@ -138,17 +138,18 @@ def _quarantine(
     row: dict[str, str | list[str] | None],
     reason: str,
     warning_code: str,
+    created_at: str,
 ) -> None:
     observation_date = row.get("取引日")
     if not isinstance(observation_date, str) or not _valid_date(observation_date):
         observation_date = None
     connection.execute(
         "INSERT INTO review_quarantine(import_id, row_number, reason, row_json, created_at) VALUES (?, ?, ?, ?, ?)",
-        (import_id, row_number, reason, _row_json(row), utc_now()),
+        (import_id, row_number, reason, _row_json(row), created_at),
     )
     connection.execute(
         "INSERT INTO data_warnings(import_id, warning_code, message, row_number, created_at, observation_date) VALUES (?, ?, ?, ?, ?, ?)",
-        (import_id, warning_code, reason, row_number, utc_now(), observation_date),
+        (import_id, warning_code, reason, row_number, created_at, observation_date),
     )
 
 
@@ -240,12 +241,14 @@ def import_csv(
     path: Path,
     *,
     source_name: str,
+    retrieved_at: str | None = None,
 ) -> ImportResult:
     """Import exact columns and rebuild positions with currency-safe basis.
 
     Impossible sells are quarantined while their source records remain in the
     audit trail; mixed-currency positions persist a NULL scalar basis.
     """
+    import_retrieved_at = normalize_retrieved_at(retrieved_at) if retrieved_at is not None else utc_now()
     raw = path.read_bytes()
     file_hash = hashlib.sha256(raw).hexdigest()
     existing = connection.execute(
@@ -268,7 +271,7 @@ def import_csv(
             INSERT INTO imports(file_hash, source_name, source_identifier, imported_at)
             VALUES (?, ?, ?, ?) RETURNING id
             """,
-            (file_hash, source_name, path.name, utc_now()),
+            (file_hash, source_name, path.name, import_retrieved_at),
         ).fetchone()[0])
         accepted = 0
         warnings = 0
@@ -306,7 +309,7 @@ def import_csv(
                     source_id = add_source_record(
                         connection, source_name=source_name,
                         source_identifier=f"{path.name}#row-{row_number}",
-                        retrieved_at=utc_now(), observation_date=row["取引日"],
+                        retrieved_at=import_retrieved_at, observation_date=row["取引日"],
                         instrument_identifier=None, instrument_identifier_type=None,
                         field="cash_movement", value=row["単価"], unit="total_cash",
                         currency=currency, freshness_status="observed",
@@ -331,7 +334,7 @@ def import_csv(
                     source_id = add_source_record(
                         connection, source_name=source_name,
                         source_identifier=f"{path.name}#row-{row_number}",
-                        retrieved_at=utc_now(), observation_date=row["取引日"],
+                        retrieved_at=import_retrieved_at, observation_date=row["取引日"],
                         instrument_identifier=row["銘柄コード"],
                         instrument_identifier_type=row["銘柄コード種別"],
                         field=transaction_type.lower(),
@@ -362,6 +365,7 @@ def import_csv(
                     connection, import_id=import_id, row_number=row_number,
                     row=row, reason=str(exc),
                     warning_code="UNKNOWN_ACCOUNT" if row.get("口座区分") not in ACCOUNT_ALIASES else "MALFORMED_ROW",
+                    created_at=import_retrieved_at,
                 )
         invalid_rows = _rebuild_positions(connection)
         for invalid, reason, warning_code in invalid_rows:
@@ -373,6 +377,7 @@ def import_csv(
             _quarantine(
                 connection, import_id=import_id, row_number=row_number, row=row,
                 reason=reason, warning_code=warning_code,
+                created_at=import_retrieved_at,
             )
             accepted -= 1
             warnings += 1

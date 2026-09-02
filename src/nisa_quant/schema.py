@@ -16,6 +16,8 @@ import sqlite3
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from .phase2_sources import canonical_market_observation
+
 
 ACCOUNT_TYPES = (
     "NISA",
@@ -55,6 +57,235 @@ def _legacy_watchlist_date(value: object) -> str | None:
     except ValueError:
         return None
     return parsed.isoformat() if parsed.isoformat() == value else None
+
+
+def _migrate_phase2_tables(connection: sqlite3.Connection) -> None:
+    """Run the Phase 2 binding migration as one recoverable unit."""
+    savepoint = "phase2_schema_migration"
+    connection.execute(f"SAVEPOINT {savepoint}")
+    try:
+        _migrate_phase2_tables_impl(connection)
+    except Exception:
+        connection.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+        connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+        raise
+    else:
+        connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+
+
+def _migrate_phase2_tables_impl(connection: sqlite3.Connection) -> None:
+    """Upgrade the first dirty Phase 2 schema without losing audit rows."""
+    market_columns = {row[1] for row in connection.execute("PRAGMA table_info(phase2_market_observations)")}
+    legacy_market_bindings = _detach_phase2_bindings(
+        connection, "phase2_market_observation_bindings", "observation_id",
+    )
+    market_id_mapping: dict[str, str] = {}
+    if market_columns:
+        for name, definition in (
+            ("observation_identity", "TEXT NOT NULL DEFAULT ''"),
+            ("observation_hash", "TEXT NOT NULL DEFAULT ''"),
+            ("conflict_status", "TEXT NOT NULL DEFAULT 'usable'"),
+        ):
+            if name not in market_columns:
+                savepoint = f"phase2_add_market_{name}"
+                connection.execute(f"SAVEPOINT {savepoint}")
+                try:
+                    connection.execute(f"ALTER TABLE phase2_market_observations ADD COLUMN {name} {definition}")
+                except sqlite3.Error:
+                    connection.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+                    connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+                    raise
+                connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+                market_columns.add(name)
+        market_id_mapping = _backfill_market_identity(connection)
+    evidence_columns = {row[1] for row in connection.execute("PRAGMA table_info(phase2_evidence)")}
+    if evidence_columns:
+        for name, definition in (
+            ("record_hash", "TEXT NOT NULL DEFAULT ''"),
+            ("conflict_status", "TEXT NOT NULL DEFAULT 'usable'"),
+        ):
+            if name not in evidence_columns:
+                savepoint = f"phase2_add_evidence_{name}"
+                connection.execute(f"SAVEPOINT {savepoint}")
+                try:
+                    connection.execute(f"ALTER TABLE phase2_evidence ADD COLUMN {name} {definition}")
+                except sqlite3.Error:
+                    connection.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+                    connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+                    raise
+                connection.execute(f"RELEASE SAVEPOINT {savepoint}")
+                evidence_columns.add(name)
+            if name == "record_hash":
+                connection.execute("UPDATE phase2_evidence SET record_hash = evidence_id WHERE record_hash = ''")
+    unique_identity = False
+    for index_row in connection.execute("PRAGMA index_list(phase2_evidence)"):
+        if not index_row[2]:
+            continue
+        index_columns = [column[2] for column in connection.execute(f"PRAGMA index_info({index_row[1]})")]
+        if "evidence_identity" in index_columns:
+            unique_identity = True
+            break
+    legacy_evidence_bindings = _detach_phase2_bindings(
+        connection, "phase2_evidence_bindings", "evidence_id",
+    )
+    if unique_identity:
+        connection.execute("ALTER TABLE phase2_evidence RENAME TO phase2_evidence_legacy")
+        connection.execute(
+            """CREATE TABLE phase2_evidence (
+                evidence_id TEXT PRIMARY KEY, evidence_identity TEXT NOT NULL, record_hash TEXT NOT NULL,
+                conflict_status TEXT NOT NULL CHECK (conflict_status IN ('usable', 'conflict')),
+                evidence_kind TEXT NOT NULL CHECK (evidence_kind IN ('filing', 'news', 'alert')),
+                evidence_subtype TEXT NOT NULL, source_name TEXT NOT NULL, source_identifier TEXT NOT NULL,
+                source_url TEXT NOT NULL, ticker TEXT, issuer_cik TEXT, publication_at TEXT,
+                period_start TEXT, period_end TEXT, fact_field TEXT, fact_value TEXT, fact_unit TEXT,
+                topic TEXT NOT NULL, evidence_text TEXT, source_quality TEXT NOT NULL, recency_status TEXT NOT NULL,
+                corroboration_status TEXT NOT NULL, uncertainty_status TEXT NOT NULL, metadata_json TEXT NOT NULL,
+                retrieved_at TEXT NOT NULL, source_version TEXT NOT NULL, citation TEXT NOT NULL
+            )"""
+        )
+        connection.execute(
+            """INSERT INTO phase2_evidence SELECT evidence_id, evidence_identity, record_hash, conflict_status,
+                evidence_kind, evidence_subtype, source_name, source_identifier, source_url, ticker, issuer_cik,
+                publication_at, period_start, period_end, fact_field, fact_value, fact_unit, topic, evidence_text,
+                source_quality, recency_status, corroboration_status, uncertainty_status, metadata_json,
+                retrieved_at, source_version, citation FROM phase2_evidence_legacy"""
+        )
+        connection.execute("DROP TABLE phase2_evidence_legacy")
+    connection.execute(
+        """CREATE TABLE IF NOT EXISTS phase2_market_observation_bindings (
+            request_id TEXT NOT NULL,
+            scope_id TEXT REFERENCES phase2_refresh_scopes(scope_id),
+            observation_id TEXT NOT NULL REFERENCES phase2_market_observations(observation_id),
+            conflict_status TEXT NOT NULL DEFAULT 'usable'
+                CHECK (conflict_status IN ('usable', 'conflict')),
+            PRIMARY KEY(request_id, observation_id)
+        )""",
+    )
+    connection.execute(
+        """CREATE TABLE IF NOT EXISTS phase2_evidence_bindings (
+            request_id TEXT NOT NULL,
+            scope_id TEXT REFERENCES phase2_refresh_scopes(scope_id),
+            evidence_id TEXT NOT NULL REFERENCES phase2_evidence(evidence_id),
+            conflict_status TEXT NOT NULL DEFAULT 'usable'
+                CHECK (conflict_status IN ('usable', 'conflict')),
+            PRIMARY KEY(request_id, evidence_id)
+        )""",
+    )
+    if legacy_evidence_bindings:
+        connection.executemany(
+            "INSERT OR IGNORE INTO phase2_evidence_bindings(request_id, scope_id, evidence_id, conflict_status) VALUES (?, ?, ?, ?)",
+            legacy_evidence_bindings,
+        )
+    if legacy_market_bindings:
+        connection.executemany(
+            "INSERT OR IGNORE INTO phase2_market_observation_bindings(request_id, scope_id, observation_id, conflict_status) VALUES (?, ?, ?, ?)",
+            [
+                (request_id, scope_id, market_id_mapping.get(observation_id, observation_id), conflict_status)
+                for request_id, scope_id, observation_id, conflict_status in legacy_market_bindings
+            ],
+        )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS phase2_market_binding_scope ON phase2_market_observation_bindings(scope_id, observation_id)"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS phase2_evidence_binding_scope ON phase2_evidence_bindings(scope_id, evidence_id)"
+    )
+    connection.execute(
+        """INSERT OR IGNORE INTO phase2_market_observation_bindings(request_id, scope_id, observation_id)
+           SELECT 'legacy-phase2', NULL, observation_id FROM phase2_market_observations""",
+    )
+    connection.execute(
+        """INSERT OR IGNORE INTO phase2_evidence_bindings(request_id, scope_id, evidence_id)
+           SELECT 'legacy-phase2', NULL, evidence_id FROM phase2_evidence""",
+    )
+    connection.execute("CREATE INDEX IF NOT EXISTS phase2_market_identity ON phase2_market_observations(observation_identity)")
+    connection.execute("CREATE INDEX IF NOT EXISTS phase2_evidence_identity ON phase2_evidence(evidence_identity)")
+    connection.execute("CREATE INDEX IF NOT EXISTS phase2_evidence_lookup ON phase2_evidence(ticker, evidence_kind, publication_at)")
+    for table, name, definition in (
+        ("phase2_refresh_scopes", "request_id", "TEXT NOT NULL DEFAULT 'legacy-scope'"),
+        ("phase2_failures", "scope_id", "TEXT"),
+        ("phase2_refresh_runs", "input_fingerprint", "TEXT NOT NULL DEFAULT ''"),
+        ("phase2_snapshots", "request_id", "TEXT"),
+        ("phase2_snapshots", "scope_id", "TEXT"),
+    ):
+        columns = {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+        if columns and name not in columns:
+            connection.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
+    connection.execute(
+        """UPDATE phase2_refresh_scopes SET request_id = (
+               SELECT rs.request_id FROM phase2_refresh_run_scopes rs
+               WHERE rs.scope_id = phase2_refresh_scopes.scope_id LIMIT 1
+           )
+           WHERE request_id = 'legacy-scope'
+             AND EXISTS (
+               SELECT 1 FROM phase2_refresh_run_scopes rs
+               WHERE rs.scope_id = phase2_refresh_scopes.scope_id
+           )""",
+    )
+
+
+def _backfill_market_identity(connection: sqlite3.Connection) -> dict[str, str]:
+    """Backfill legacy market rows with the live canonical identity format."""
+    rows = connection.execute("SELECT * FROM phase2_market_observations ORDER BY observation_id").fetchall()
+    if not rows:
+        return {}
+    plans: list[tuple[str, str, str, str]] = []
+    existing_ids = {str(row["observation_id"]) for row in rows}
+    desired_counts: dict[str, int] = {}
+    id_mapping: dict[str, str] = {}
+    for row in rows:
+        try:
+            numeric_value = float(row["value"])
+            value: object = numeric_value if math.isfinite(numeric_value) else row["value"]
+        except (TypeError, ValueError):
+            value = row["value"]
+        identity, observation_hash, desired_id = canonical_market_observation(
+            ticker=str(row["ticker"]).upper(), observation_date=str(row["observation_date"]),
+            provider=str(row["provider"]), provider_observation_id=str(row["provider_observation_id"]),
+            field=str(row["field"]), value=value, currency=str(row["currency"]),
+            citation=str(row["citation"]), source_version=str(row["source_version"]),
+            freshness_status=str(row["freshness_status"]),
+        )
+        desired_counts[desired_id] = desired_counts.get(desired_id, 0) + 1
+        plans.append((str(row["observation_id"]), identity, observation_hash, desired_id))
+    for old_id, identity, observation_hash, desired_id in plans:
+        conflict = desired_counts[desired_id] > 1 or (desired_id in existing_ids and desired_id != old_id)
+        new_id = old_id if conflict else desired_id
+        id_mapping[old_id] = new_id
+        connection.execute(
+            "UPDATE phase2_market_observations SET observation_id = ?, observation_identity = ?, observation_hash = ?, conflict_status = ? WHERE observation_id = ?",
+            (new_id, identity, observation_hash, "conflict" if conflict else "usable", old_id),
+        )
+    connection.execute(
+        """UPDATE phase2_market_observations SET conflict_status = 'conflict'
+           WHERE observation_identity IN (
+               SELECT observation_identity FROM phase2_market_observations
+               GROUP BY observation_identity HAVING COUNT(*) > 1
+           )""",
+    )
+    return id_mapping
+
+
+def _detach_phase2_bindings(
+    connection: sqlite3.Connection, table: str, record_column: str,
+) -> list[tuple[object, object, object]]:
+    """Detach legacy bindings before a referenced fact table is rebuilt."""
+    columns = {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+    if not columns:
+        return []
+    if {"request_id", record_column} <= columns:
+        scope_expression = "scope_id" if "scope_id" in columns else "NULL"
+        conflict_expression = "conflict_status" if "conflict_status" in columns else "'usable'"
+        rows = [
+            (row[0], row[1], row[2], row[3])
+            for row in connection.execute(
+                f"SELECT request_id, {scope_expression}, {record_column}, {conflict_expression} FROM {table}"
+            )
+        ]
+    else:
+        rows = []
+    connection.execute(f"DROP TABLE {table}")
+    return rows
 
 
 def _migrate_watchlist_rows(connection: sqlite3.Connection) -> None:
@@ -493,8 +724,153 @@ def initialize_database(connection: sqlite3.Connection) -> None:
         BEGIN
             SELECT RAISE(ABORT, 'recommendation integrity evidence is immutable');
         END;
+        CREATE TABLE IF NOT EXISTS phase2_universe_members (
+            member_id TEXT PRIMARY KEY,
+            universe_id TEXT NOT NULL,
+            effective_date TEXT NOT NULL,
+            membership_status TEXT NOT NULL CHECK (membership_status IN ('active', 'inactive')),
+            ticker TEXT NOT NULL,
+            cik TEXT NOT NULL,
+            issuer_name TEXT NOT NULL,
+            exchange TEXT NOT NULL,
+            source_url TEXT NOT NULL,
+            source_version TEXT NOT NULL,
+            retrieved_at TEXT NOT NULL,
+            lookahead_bias_status TEXT NOT NULL CHECK (lookahead_bias_status IN ('point_in_time', 'current_snapshot_only')),
+            survivorship_bias_status TEXT NOT NULL CHECK (survivorship_bias_status IN ('survivorship_risk_disclosed', 'not_claimed'))
+        );
+        CREATE INDEX IF NOT EXISTS phase2_universe_lookup
+            ON phase2_universe_members(universe_id, ticker, effective_date);
+        CREATE TABLE IF NOT EXISTS phase2_universe_inputs (
+            input_id TEXT PRIMARY KEY,
+            member_ids_json TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS phase2_universe_input_members (
+            input_id TEXT NOT NULL REFERENCES phase2_universe_inputs(input_id),
+            member_id TEXT NOT NULL REFERENCES phase2_universe_members(member_id),
+            PRIMARY KEY(input_id, member_id)
+        );
+        CREATE TABLE IF NOT EXISTS phase2_refresh_scopes (
+            scope_id TEXT PRIMARY KEY,
+            request_id TEXT NOT NULL,
+            as_of TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS phase2_refresh_scope_members (
+            scope_id TEXT NOT NULL REFERENCES phase2_refresh_scopes(scope_id),
+            member_id TEXT NOT NULL REFERENCES phase2_universe_members(member_id),
+            PRIMARY KEY(scope_id, member_id)
+        );
+        CREATE TABLE IF NOT EXISTS phase2_refresh_run_scopes (
+            request_id TEXT PRIMARY KEY,
+            scope_id TEXT NOT NULL REFERENCES phase2_refresh_scopes(scope_id)
+        );
+        CREATE INDEX IF NOT EXISTS phase2_refresh_scope_as_of
+            ON phase2_refresh_scopes(as_of, scope_id);
+        CREATE TABLE IF NOT EXISTS phase2_market_observations (
+            observation_id TEXT PRIMARY KEY,
+            observation_identity TEXT NOT NULL,
+            observation_hash TEXT NOT NULL,
+            conflict_status TEXT NOT NULL CHECK (conflict_status IN ('usable', 'conflict')),
+            ticker TEXT NOT NULL,
+            observation_date TEXT NOT NULL,
+            field TEXT NOT NULL CHECK (field IN ('open', 'high', 'low', 'close', 'volume')),
+            value TEXT NOT NULL,
+            unit TEXT NOT NULL,
+            currency TEXT NOT NULL,
+            provider TEXT NOT NULL,
+            provider_observation_id TEXT NOT NULL,
+            source_version TEXT NOT NULL,
+            citation TEXT NOT NULL,
+            retrieved_at TEXT NOT NULL,
+            freshness_status TEXT NOT NULL CHECK (freshness_status IN ('current', 'observed', 'stale', 'conflicting', 'unavailable'))
+        );
+        CREATE INDEX IF NOT EXISTS phase2_market_lookup
+            ON phase2_market_observations(ticker, observation_date, field);
+        CREATE TABLE IF NOT EXISTS phase2_market_observation_bindings (
+            request_id TEXT NOT NULL,
+            scope_id TEXT REFERENCES phase2_refresh_scopes(scope_id),
+            observation_id TEXT NOT NULL REFERENCES phase2_market_observations(observation_id),
+            conflict_status TEXT NOT NULL DEFAULT 'usable'
+                CHECK (conflict_status IN ('usable', 'conflict')),
+            PRIMARY KEY(request_id, observation_id)
+        );
+        CREATE TABLE IF NOT EXISTS phase2_evidence (
+            evidence_id TEXT PRIMARY KEY,
+            evidence_identity TEXT NOT NULL,
+            record_hash TEXT NOT NULL,
+            conflict_status TEXT NOT NULL CHECK (conflict_status IN ('usable', 'conflict')),
+            evidence_kind TEXT NOT NULL CHECK (evidence_kind IN ('filing', 'news', 'alert')),
+            evidence_subtype TEXT NOT NULL,
+            source_name TEXT NOT NULL,
+            source_identifier TEXT NOT NULL,
+            source_url TEXT NOT NULL,
+            ticker TEXT,
+            issuer_cik TEXT,
+            publication_at TEXT,
+            period_start TEXT,
+            period_end TEXT,
+            fact_field TEXT,
+            fact_value TEXT,
+            fact_unit TEXT,
+            topic TEXT NOT NULL,
+            evidence_text TEXT,
+            source_quality TEXT NOT NULL,
+            recency_status TEXT NOT NULL,
+            corroboration_status TEXT NOT NULL,
+            uncertainty_status TEXT NOT NULL,
+            metadata_json TEXT NOT NULL,
+            retrieved_at TEXT NOT NULL,
+            source_version TEXT NOT NULL,
+            citation TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS phase2_evidence_lookup
+            ON phase2_evidence(ticker, evidence_kind, publication_at);
+        CREATE TABLE IF NOT EXISTS phase2_evidence_bindings (
+            request_id TEXT NOT NULL,
+            scope_id TEXT REFERENCES phase2_refresh_scopes(scope_id),
+            evidence_id TEXT NOT NULL REFERENCES phase2_evidence(evidence_id),
+            conflict_status TEXT NOT NULL DEFAULT 'usable'
+                CHECK (conflict_status IN ('usable', 'conflict')),
+            PRIMARY KEY(request_id, evidence_id)
+        );
+        CREATE TABLE IF NOT EXISTS phase2_failures (
+            failure_id TEXT PRIMARY KEY,
+            request_id TEXT NOT NULL,
+            scope_id TEXT,
+            source_name TEXT NOT NULL,
+            failure_code TEXT NOT NULL,
+            message TEXT NOT NULL,
+            ticker TEXT,
+            observed_at TEXT,
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS phase2_refresh_runs (
+            run_id TEXT PRIMARY KEY,
+            request_id TEXT NOT NULL UNIQUE,
+            as_of TEXT NOT NULL,
+            started_at TEXT NOT NULL,
+            completed_at TEXT NOT NULL,
+            status TEXT NOT NULL,
+            accepted_universe_members INTEGER NOT NULL,
+            accepted_market_observations INTEGER NOT NULL,
+            accepted_evidence INTEGER NOT NULL,
+            failure_count INTEGER NOT NULL,
+            snapshot_id TEXT NOT NULL,
+            input_fingerprint TEXT NOT NULL DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS phase2_snapshots (
+            snapshot_id TEXT PRIMARY KEY,
+            as_of TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            snapshot_hash TEXT NOT NULL UNIQUE,
+            report_json TEXT NOT NULL,
+            no_verdict_boundary TEXT NOT NULL CHECK (no_verdict_boundary = 'evidence_only'),
+            request_id TEXT,
+            scope_id TEXT
+        );
         """
     )
+    _migrate_phase2_tables(connection)
     positions_columns = list(connection.execute("PRAGMA table_info(positions)"))
     cost_basis_column = next(
         (row for row in positions_columns if row[1] == "cost_basis"), None

@@ -42,11 +42,18 @@ class CliTests(unittest.TestCase):
         root = Path(__file__).parent
         with tempfile.TemporaryDirectory() as directory:
             database = str(Path(directory) / "fresh.sqlite")
-            for command in (
+            report = str(Path(directory) / "nisa-report.md")
+            commands = (
                 ("init-db", "--db", database),
-                ("import-csv", "--db", database, "--csv", str(root / "fixtures" / "synthetic_broker.csv")),
+                ("watchlist-add", "--db", database, "--identifier-value", "1306", "--identifier-type", "jpx_code", "--display-name", "TOPIX ETF", "--asset-type", "ETF", "--market", "JPX", "--currency", "JPY", "--benchmark", "TOPIX.BENCHMARK", "--benchmark-identifier-type", "other", "--benchmark-identifier-value", "TOPIX.BENCHMARK", "--notes", "synthetic", "--effective-date", "2026-08-01", "--observed-at", "2026-08-01T00:00:00+00:00"),
+                ("import-csv", "--db", database, "--csv", str(root / "fixtures" / "synthetic_broker.csv"), "--retrieved-at", "2026-08-30T00:00:00+00:00"),
                 ("import-prices", "--db", database, "--csv", str(root / "fixtures" / "synthetic_prices.csv")),
-            ):
+                ("import-distributions", "--db", database, "--csv", str(root / "fixtures" / "synthetic_distributions.csv")),
+                ("snapshot", "--db", database, "--as-of", "2026-08-30"),
+                ("screens", "--db", database, "--as-of", "2026-08-30"),
+                ("report", "--db", database, "--as-of", "2026-08-30", "--output", report),
+            )
+            for command in commands:
                 result = self.run_cli(*command)
                 self.assertEqual(result.returncode, 0, result.stderr)
             result = self.run_cli(
@@ -85,6 +92,84 @@ class CliTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("benchmark identifier type and value", result.stderr.lower())
+
+    def test_phase2_fixture_refresh_and_evidence_inspection_are_read_only(self) -> None:
+        root = Path(__file__).parent
+        with tempfile.TemporaryDirectory() as directory:
+            database = str(Path(directory) / "phase2.sqlite")
+            refresh = self.run_cli(
+                "phase2-refresh-fixtures", "--db", database,
+                "--universe-csv", str(root / "fixtures" / "phase2_universe.csv"),
+                "--market-csv", str(root / "fixtures" / "phase2_market.csv"),
+                "--as-of", "2026-09-01", "--request-id", "cli-phase2-a",
+            )
+            self.assertEqual(refresh.returncode, 0, refresh.stderr)
+            self.assertIn('"accepted_market_observations": 5', refresh.stdout)
+            evidence = self.run_cli(
+                "phase2-evidence", "--db", database, "--as-of", "2026-09-01",
+            )
+
+        self.assertEqual(evidence.returncode, 0, evidence.stderr)
+        self.assertIn('"phase": "phase2-evidence"', evidence.stdout)
+        for forbidden in ("BUY", "HOLD", "SELL", "ORDER", "BROKER"):
+            self.assertNotIn(forbidden, evidence.stdout.upper())
+
+    def test_help_lists_phase2_read_only_commands(self) -> None:
+        result = self.run_cli("--help")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("phase2-refresh-fixtures", result.stdout)
+        self.assertIn("phase2-evidence", result.stdout)
+
+    def test_phase2_failed_refresh_has_deterministic_nonzero_exit(self) -> None:
+        root = Path(__file__).parent
+        with tempfile.TemporaryDirectory() as directory:
+            database = str(Path(directory) / "phase2.sqlite")
+            bad_sec = Path(directory) / "bad-sec.json"
+            bad_sec.write_text("not-json", encoding="utf-8")
+            result = self.run_cli(
+                "phase2-refresh-fixtures", "--db", database,
+                "--universe-csv", str(root / "fixtures" / "phase2_universe.csv"),
+                "--market-csv", str(root / "fixtures" / "phase2_market.csv"),
+                "--sec-json", str(bad_sec), "--sec-ticker", "ABC", "--sec-cik", "0000000001",
+                "--as-of", "2026-09-01", "--request-id", "cli-phase2-failed",
+            )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('"status": "failed"', result.stdout)
+
+    def test_phase2_zero_active_fixture_refresh_has_nonzero_exit(self) -> None:
+        root = Path(__file__).parent
+        with tempfile.TemporaryDirectory() as directory:
+            universe = Path(directory) / "empty-universe.csv"
+            market = Path(directory) / "market.csv"
+            database = Path(directory) / "phase2.sqlite"
+            universe.write_text(",".join((
+                "universe_id", "effective_date", "membership_status", "ticker", "cik",
+                "issuer_name", "exchange", "source_url", "source_version", "retrieved_at",
+                "lookahead_bias_status", "survivorship_bias_status",
+            )) + "\n", encoding="utf-8")
+            market.write_text((root / "fixtures" / "phase2_market.csv").read_text(encoding="utf-8"), encoding="utf-8")
+            result = self.run_cli(
+                "phase2-refresh-fixtures", "--db", str(database),
+                "--universe-csv", str(universe), "--market-csv", str(market),
+                "--as-of", "2026-09-01", "--request-id", "cli-zero-active",
+            )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('"status": "failed"', result.stdout)
+
+    def test_phase2_configured_refresh_with_no_provider_has_nonzero_exit(self) -> None:
+        root = Path(__file__).parent
+        with tempfile.TemporaryDirectory() as directory:
+            database = str(Path(directory) / "phase2.sqlite")
+            config = Path(directory) / "phase2.json"
+            config.write_text('{"market":{"enabled":false},"sec":{"enabled":false},"rss":{"enabled":false}}', encoding="utf-8")
+            result = self.run_cli(
+                "phase2-refresh-config", "--db", database, "--config", str(config),
+                "--universe-csv", str(root / "fixtures" / "phase2_universe.csv"),
+                "--as-of", "2026-09-01", "--request-id", "cli-no-provider",
+            )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('"status": "failed"', result.stdout)
 
 
 if __name__ == "__main__":

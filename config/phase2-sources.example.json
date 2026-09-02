@@ -1,0 +1,34 @@
+{
+  "universe": {
+    "source_url": "https://www.spglobal.com/spdji/en/indices/equity/sp-500/",
+    "source_version": "[REDACTED: verify supplied constituent snapshot]",
+    "effective_date": "YYYY-MM-DD",
+    "lookahead_bias_status": "point_in_time",
+    "survivorship_bias_status": "survivorship_risk_disclosed"
+  },
+  "market": {
+    "enabled": true,
+    "provider": "alpha-vantage",
+    "base_url": "https://www.alphavantage.co/query",
+    "api_key_env": "[REDACTED: local environment variable name]",
+    "endpoint": "TIME_SERIES_DAILY",
+    "timeout_seconds": 15
+  },
+  "sec": {
+    "enabled": true,
+    "submissions_base_url": "https://data.sec.gov/submissions/",
+    "companyfacts_base_url": "https://data.sec.gov/api/xbrl/companyfacts/",
+    "user_agent": "[REDACTED: descriptive contact user agent]",
+    "max_requests_per_second": 10
+  },
+  "rss": {
+    "enabled": false,
+    "source_name": "configured-rss",
+    "source_url": "[REDACTED: explicitly licensed or public feed URL]",
+    "source_version": "[REDACTED: verify source version]",
+    "terms_url": "[REDACTED: source terms URL]",
+    "content_policy": "metadata_only",
+    "timeout_seconds": 15,
+    "entity_aliases": {}
+  }
+}

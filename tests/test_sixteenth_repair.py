@@ -78,7 +78,8 @@ class SixteenthRepairStructuredReportTests(unittest.TestCase):
     def setUp(self) -> None:
         self.connection = connect_database(":memory:")
         initialize_database(self.connection)
-        import_csv(self.connection, FIXTURES / "synthetic_broker.csv", source_name="synthetic-broker")
+        with patch("nisa_quant.imports.utc_now", return_value="2026-08-28T00:00:00+00:00"):
+            import_csv(self.connection, FIXTURES / "synthetic_broker.csv", source_name="synthetic-broker")
         import_price_fixture(
             self.connection,
             FIXTURES / "synthetic_prices.csv",
@@ -140,7 +141,8 @@ class SixteenthRepairJournalTests(unittest.TestCase):
     def setUp(self) -> None:
         self.connection = connect_database(":memory:")
         initialize_database(self.connection)
-        import_csv(self.connection, FIXTURES / "synthetic_broker.csv", source_name="synthetic-broker")
+        with patch("nisa_quant.imports.utc_now", return_value="2026-08-28T00:00:00+00:00"):
+            import_csv(self.connection, FIXTURES / "synthetic_broker.csv", source_name="synthetic-broker")
         self.connection.execute(
             "UPDATE instruments SET benchmark = 'TOPIX.BENCHMARK', benchmark_identifier_type = 'other', "
             "benchmark_identifier_value = 'TOPIX.BENCHMARK' WHERE identifier_value = '1306'"

@@ -1,6 +1,12 @@
-# Historical research / deferred — not active implementation instructions
+# Phase 2 amendment — active implementation instructions
 
-Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred roadmap: Hermes/live providers/scheduling/delivery. Prohibited: credentials, broker login/write/order execution, Discord delivery, and Yume iOS changes.
+Active boundary: implement the standalone read-only US S&P 500 evidence layer described in `docs/phase2-sources.md` and this amendment.
+
+Compatibility boundary: local fixture/CSV/SQLite/CLI deterministic behavior remains supported. Hermes, scheduling, delivery, broker access, credentials, predictions, directional verdicts, automatic trading, and Yume iOS changes remain outside Phase 2.
+
+The historical Japan-first plan below is reference material superseded by the active Phase 2 amendment where the two differ.
+
+Historical research / deferred — not active implementation instructions: the legacy sections below preserve the prior local release context.
 
 # NISA Quant Assistant Implementation Plan
 
@@ -8,7 +14,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred r
 
 **Goal:** Build a local-first, advisory-only quant assistant that turns sourced Japan/international market data and broker CSV exports into deterministic metrics, cited BUY/HOLD/SELL candidate reports, and recommendation outcome tracking.
 
-**Architecture:** The implemented architecture is a local Python CLI with fixture/CSV ingestion, SQLite, deterministic calculations, screens, cited Markdown, and journal evaluation. Hermes narrative routing, live adapters, and delivery were historical future proposals.
+**Architecture:** The active Phase 2 amendment adds a read-only, provider-configured evidence path over strict universe CSV, daily OHLCV, SEC submissions/Company Facts, and explicitly mapped RSS. The existing local Python CLI, SQLite ledger, deterministic calculations, screens, cited Markdown, and journal remain compatibility paths; Hermes routing and delivery remain deferred.
 
 **Tech Stack:** Implemented: Python, SQLite, CSV fixtures, Markdown, and the local CLI. Historical deferred proposals included Hermes/cron, J-Quants V2, yfinance, issuer/JPX/EDINET/TDnet sources, optional analytics libraries, and Discord delivery; none are active dependencies or routing instructions.
 
@@ -16,7 +22,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred r
 **Project directory:** `/Users/user/Documents/Yume/nisa-research/`  
 **Pre-development rule:** Keep artifacts and implementation local/uncommitted until the pre-development baseline is complete and Ilham explicitly authorizes implementation.
 
-## Current release boundary
+## Legacy release boundary (superseded for Phase 2)
 
 Implemented now: local fixture/CSV/SQLite/CLI only.
 
