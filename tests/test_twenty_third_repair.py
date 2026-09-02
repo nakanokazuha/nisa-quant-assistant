@@ -8,10 +8,10 @@ import unittest
 
 from tests.test_nineteenth_repair import canonical_hash, minimal_report, recommendation_fixture
 
-from nisa_quant.journal import _recommendation_contract_hash, evaluate_recommendation
-from nisa_quant.reports import validate_report
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.sources import add_source_record
+from nisa_quant.recommendation_journal import _recommendation_contract_hash, evaluate_recommendation
+from nisa_quant.report_rendering import validate_report
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.source_records import add_source_record
 from nisa_quant.watchlist import watchlist_as_of
 
 

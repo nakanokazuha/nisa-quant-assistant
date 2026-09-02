@@ -14,7 +14,7 @@ Prohibited: credentials, broker login/write/order execution, Discord delivery, a
 
 **Tech Stack:** Python 3.11 standard library, SQLite, `urllib`, `ipaddress`, `time`, `unittest`; no new dependency.
 
-**Spec:** This task contract and `docs/superpowers/specs/2026-09-01-nisa-phase2-r1-design.md`.
+**Spec:** This task contract and `docs/specifications/phase2/2026-09-01-nisa-phase2-r1-design.md`.
 
 ## Global Constraints
 
@@ -38,8 +38,8 @@ Prohibited: credentials, broker login/write/order execution, Discord delivery, a
 ### Task 2: Repair transport trust and integrity validation
 
 **Files:**
-- Modify: `src/nisa_quant/phase2_sources.py`
-- Modify: `src/nisa_quant/phase2.py`
+- Modify: `src/nisa_quant/evidence_providers.py`
+- Modify: `src/nisa_quant/evidence_collection.py`
 
 - [x] Enforce explicit Alpha Vantage and SEC official host allowlists, reject IP/private/loopback/link-local/credentialed references and redirects, and prevent configured URL values from becoming a trust allowlist.
 - [x] Add shared recursive scanning for all record fields, universe/market source fields, failure/report collections, and nested metadata; retain safe issuer/news prose.
@@ -48,10 +48,10 @@ Prohibited: credentials, broker login/write/order execution, Discord delivery, a
 ### Task 3: Repair chronology, identity, cutoff/run scope, pacing, freshness, and status
 
 **Files:**
-- Modify: `src/nisa_quant/phase2_sources.py`
-- Modify: `src/nisa_quant/phase2.py`
+- Modify: `src/nisa_quant/evidence_providers.py`
+- Modify: `src/nisa_quant/evidence_collection.py`
 - Modify: `src/nisa_quant/__main__.py`
-- Modify: `docs/phase2-sources.md`
+- Modify: `docs/sources/phase2.md`
 
 - [x] Validate Company Facts payload CIK identity against the explicit request; document absent accession behavior as explicit source identity without invented accession.
 - [x] Use normalized retrieval time for live configured calls, select only active/effective current-run universe members at or before `as_of`, and exclude future/unrelated rows.
@@ -64,7 +64,7 @@ Prohibited: credentials, broker login/write/order execution, Discord delivery, a
 **Files:**
 - Modify: `tests/test_cli.py`
 - Modify: `tests/test_reports_journal.py` only if required by the restored workflow
-- Modify: `README.md` only if the documented command needs an exact deterministic clarification
+- Modify: `docs/README.md` only if the documented command needs an exact deterministic clarification
 
 - [x] Restore the original candidate assertion and use an explicit current-date test cutoff/input workflow so it remains meaningful without depending on an obsolete wall-clock date.
 - [x] Run targeted probes and the fresh temporary fixture/configured E2E with cleanup.

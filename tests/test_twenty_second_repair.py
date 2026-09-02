@@ -13,13 +13,13 @@ from pathlib import Path
 from tests.test_nineteenth_repair import canonical_hash, minimal_report, recommendation_fixture
 from tests.test_repairs import BROKER_COLUMNS
 
-from nisa_quant.imports import import_csv
-from nisa_quant.journal import _recommendation_contract_hash, evaluate_recommendation
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.reports import validate_report
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.screens import run_screens
-from nisa_quant.sources import add_source_record, source_fact_contract_is_valid
+from nisa_quant.broker_csv_import import import_csv
+from nisa_quant.recommendation_journal import _recommendation_contract_hash, evaluate_recommendation
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.report_rendering import validate_report
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.candidate_screening import run_screens
+from nisa_quant.source_records import add_source_record, source_fact_contract_is_valid
 from nisa_quant.watchlist import add_watchlist_item, watchlist_as_of
 
 

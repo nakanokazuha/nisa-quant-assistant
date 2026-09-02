@@ -5,10 +5,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.reports import validate_report
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.sources import add_source_record
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.report_rendering import validate_report
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.source_records import add_source_record
 from nisa_quant.watchlist import add_watchlist_item, current_materialization_date, watchlist_as_of
 
 

@@ -6,13 +6,13 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from nisa_quant.imports import import_csv
-from nisa_quant.journal import evaluate_recommendation, record_recommendation
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.reports import render_report, validate_report
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.screens import run_screens
-from nisa_quant.sources import import_price_fixture
+from nisa_quant.broker_csv_import import import_csv
+from nisa_quant.recommendation_journal import evaluate_recommendation, record_recommendation
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.report_rendering import render_report, validate_report
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.candidate_screening import run_screens
+from nisa_quant.source_records import import_price_fixture
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "synthetic_broker.csv"
@@ -25,7 +25,7 @@ class ReportsAndJournalTests(unittest.TestCase):
         initialize_database(self.connection)
         # The fixture is historical; freeze importer provenance before the
         # historical cutoff so this test does not depend on the wall clock.
-        with patch("nisa_quant.imports.utc_now", return_value="2026-08-28T00:00:00+00:00"):
+        with patch("nisa_quant.broker_csv_import.utc_now", return_value="2026-08-28T00:00:00+00:00"):
             import_csv(self.connection, FIXTURE, source_name="synthetic-broker")
         self.connection.execute("UPDATE instruments SET benchmark = 'TOPIX.BENCHMARK', benchmark_identifier_type = 'other', benchmark_identifier_value = 'TOPIX.BENCHMARK' WHERE identifier_value = '1306'")
         self.connection.commit()

@@ -6,7 +6,7 @@ import sqlite3
 import math
 from typing import Any
 
-from .sources import safe_add, safe_divide, safe_multiply
+from .source_records import safe_add, safe_divide, safe_multiply
 
 
 LABELS = {

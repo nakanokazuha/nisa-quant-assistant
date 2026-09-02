@@ -23,7 +23,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol, Sequence
 
-from .sources import normalize_retrieved_at
+from .source_records import normalize_retrieved_at
 
 
 MARKET_FIELDS = ("open", "high", "low", "close", "volume")

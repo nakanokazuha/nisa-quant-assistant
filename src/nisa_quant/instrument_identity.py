@@ -6,7 +6,7 @@ import sqlite3
 from datetime import date
 from typing import Any, Iterable
 
-from .sources import (
+from .source_records import (
     parse_retrieved_at,
     source_fact_chronology_is_valid,
     source_fact_contract_is_valid,

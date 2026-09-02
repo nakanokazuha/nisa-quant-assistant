@@ -5,8 +5,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.reports import validate_report
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.report_rendering import validate_report
 from nisa_quant.watchlist import materialize_current, watchlist_as_of
 
 

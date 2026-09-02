@@ -13,9 +13,9 @@ from pathlib import Path
 
 from tests.test_nineteenth_repair import canonical_hash, recommendation_fixture
 
-from nisa_quant.journal import evaluate_recommendation
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.schema import connect_database, initialize_database
+from nisa_quant.recommendation_journal import evaluate_recommendation
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.database_schema import connect_database, initialize_database
 from nisa_quant.watchlist import watchlist_as_of
 
 
@@ -28,7 +28,7 @@ class TwentiethRepairSyntaxTests(unittest.TestCase):
         if python311 is None:
             self.skipTest("python3.11 is not installed")
         result = subprocess.run(
-            [python311, "-c", "import nisa_quant.reports"],
+            [python311, "-c", "import nisa_quant.report_rendering"],
             cwd=ROOT,
             env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
             capture_output=True,

@@ -12,7 +12,7 @@ Historical research / deferred — not active implementation instructions: the l
 
 **Status:** Phase 2 evidence layer amendment plus legacy deferred product specification
 **Project boundary:** Standalone local Python research package
-**Relationship to Yume iOS:** None. This specification does not modify, extend, or authorize work in `/Users/user/Documents/Yume/yume-ios`.  
+**Relationship to Yume iOS:** None. This specification does not modify, extend, or authorize work in `/Users/user/Documents/Yume/yume-ios`.
 **Implementation:** Phase 2 fixture refresh, configured read-only provider wiring, SQLite evidence persistence, and evidence-only CLI output are locally implemented and fixture/injected-transport verified; live retrieval remains configuration-dependent and no Hermes/Codex runtime routing is active.
 **Date:** 2026-08-24 (Asia/Tokyo)
 
@@ -76,8 +76,8 @@ These are recommendations for **manual human review**. They are not certainty cl
 
 ## 3. Users and usage cadence (deferred scheduling roadmap)
 
-**User:** Ilham, single-user personal investor in Japan.  
-**Timezone:** Asia/Tokyo.  
+**User:** Ilham, single-user personal investor in Japan.
+**Timezone:** Asia/Tokyo.
 **Investment style assumed:** long-term holdings, monthly accumulation, occasional additions/reductions, stocks and ETFs, NISA priority.
 
 ### Initial cadence
@@ -141,7 +141,7 @@ The system shall maintain a user-editable watchlist of security identifiers, dis
 
 ### FR-02 — Legacy compatibility market ingestion (Phase 2 is specified above)
 
-The legacy compatibility commands support source-backed local price and distribution fixtures. J-Quants V2 and yfinance remain deferred future providers, not active clients in this repository. The active Phase 2 market path is documented in `docs/phase2-sources.md` and uses only its explicitly configured daily adapter or injected fixture provider; each record retains source, UTC-normalized retrieval time, observation date, and freshness/availability status.
+The legacy compatibility commands support source-backed local price and distribution fixtures. J-Quants V2 and yfinance remain deferred future providers, not active clients in this repository. The active Phase 2 market path is documented in `docs/sources/phase2.md` and uses only its explicitly configured daily adapter or injected fixture provider; each record retains source, UTC-normalized retrieval time, observation date, and freshness/availability status.
 
 The first implementation shall not assume that a free source provides real-time data. J-Quants Free's reported 12-week delay and rate limits must be visible in the data status.
 

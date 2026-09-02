@@ -8,9 +8,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from nisa_quant.imports import CsvImportError, import_csv
-from nisa_quant.sources import import_price_fixture
-from nisa_quant.schema import connect_database, initialize_database
+from nisa_quant.broker_csv_import import CsvImportError, import_csv
+from nisa_quant.source_records import import_price_fixture
+from nisa_quant.database_schema import connect_database, initialize_database
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "synthetic_broker.csv"

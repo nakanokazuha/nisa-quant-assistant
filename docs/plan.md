@@ -1,6 +1,6 @@
 # Phase 2 amendment — active implementation instructions
 
-Active boundary: implement the standalone read-only US S&P 500 evidence layer described in `docs/phase2-sources.md` and this amendment.
+Active boundary: implement the standalone read-only US S&P 500 evidence layer described in `docs/sources/phase2.md` and this amendment.
 
 Compatibility boundary: local fixture/CSV/SQLite/CLI deterministic behavior remains supported. Hermes, scheduling, delivery, broker access, credentials, predictions, directional verdicts, automatic trading, and Yume iOS changes remain outside Phase 2.
 
@@ -18,8 +18,8 @@ Historical research / deferred — not active implementation instructions: the l
 
 **Tech Stack:** Implemented: Python, SQLite, CSV fixtures, Markdown, and the local CLI. Historical deferred proposals included Hermes/cron, J-Quants V2, yfinance, issuer/JPX/EDINET/TDnet sources, optional analytics libraries, and Discord delivery; none are active dependencies or routing instructions.
 
-**Spec:** `/Users/user/Documents/Yume/nisa-research/NISA_QUANT_ASSISTANT_SPEC.md`  
-**Project directory:** `/Users/user/Documents/Yume/nisa-research/`  
+**Spec:** `/Users/user/Documents/Yume/nisa-research/docs/specification.md`
+**Project directory:** `/Users/user/Documents/Yume/nisa-research/`
 **Pre-development rule:** Keep artifacts and implementation local/uncommitted until the pre-development baseline is complete and Ilham explicitly authorizes implementation.
 
 ## Legacy release boundary (superseded for Phase 2)
@@ -38,7 +38,7 @@ The gates and tasks below are historical roadmap material unless they describe t
 
 ### Gate G0 — Spec approval
 
-**Entry:** This plan and the standalone specification exist.  
+**Entry:** This plan and the standalone specification exist.
 **Exit:** Ilham explicitly approves the spec/plan for implementation. “LGTM” on the research proposal is not automatically approval of every implementation detail.
 
 ### Gate G1 — Source and data contract (historical live-provider gate; deferred)
@@ -75,19 +75,20 @@ The gates and tasks below are historical roadmap material unless they describe t
 
 ```text
 /Users/user/Documents/Yume/nisa-research/
-├── NISA_QUANT_ASSISTANT_SPEC.md
-├── NISA_QUANT_ASSISTANT_PLAN.md
-├── README.md
+├── docs/
+│   ├── README.md
+│   ├── plan.md
+│   └── specification.md
 ├── pyproject.toml                       # only if a package is justified
 ├── src/nisa_quant/
-│   ├── schema.py
-│   ├── imports.py
-│   ├── sources.py
-│   ├── metrics.py
-│   ├── screens.py
+│   ├── database_schema.py
+│   ├── broker_csv_import.py
+│   ├── source_records.py
+│   ├── portfolio_metrics.py
+│   ├── candidate_screening.py
 │   ├── recommendations.py
-│   ├── reports.py
-│   └── journal.py
+│   ├── report_rendering.py
+│   └── recommendation_journal.py
 ├── tests/fixtures/
 ├── tests/
 ├── data/                                # local-only, gitignored

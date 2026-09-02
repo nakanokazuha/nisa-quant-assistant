@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import unittest
 
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.sources import add_source_record
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.source_records import add_source_record
 
 
 class TwentyFifthSourceChronologyTests(unittest.TestCase):

@@ -7,14 +7,14 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-import nisa_quant.journal as journal
-from nisa_quant.journal import record_recommendation
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.reports import render_report, validate_report
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.screens import run_screens
-from nisa_quant.sources import import_price_fixture
-from nisa_quant.imports import import_csv
+import nisa_quant.recommendation_journal as journal
+from nisa_quant.recommendation_journal import record_recommendation
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.report_rendering import render_report, validate_report
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.candidate_screening import run_screens
+from nisa_quant.source_records import import_price_fixture
+from nisa_quant.broker_csv_import import import_csv
 
 
 SOURCE_ID = "SRC-abcdef123456"
@@ -78,7 +78,7 @@ class SixteenthRepairStructuredReportTests(unittest.TestCase):
     def setUp(self) -> None:
         self.connection = connect_database(":memory:")
         initialize_database(self.connection)
-        with patch("nisa_quant.imports.utc_now", return_value="2026-08-28T00:00:00+00:00"):
+        with patch("nisa_quant.broker_csv_import.utc_now", return_value="2026-08-28T00:00:00+00:00"):
             import_csv(self.connection, FIXTURES / "synthetic_broker.csv", source_name="synthetic-broker")
         import_price_fixture(
             self.connection,
@@ -141,7 +141,7 @@ class SixteenthRepairJournalTests(unittest.TestCase):
     def setUp(self) -> None:
         self.connection = connect_database(":memory:")
         initialize_database(self.connection)
-        with patch("nisa_quant.imports.utc_now", return_value="2026-08-28T00:00:00+00:00"):
+        with patch("nisa_quant.broker_csv_import.utc_now", return_value="2026-08-28T00:00:00+00:00"):
             import_csv(self.connection, FIXTURES / "synthetic_broker.csv", source_name="synthetic-broker")
         self.connection.execute(
             "UPDATE instruments SET benchmark = 'TOPIX.BENCHMARK', benchmark_identifier_type = 'other', "

@@ -20,7 +20,7 @@ import unicodedata
 from numbers import Real
 from typing import Any, Iterable
 
-from .screens import LABELS, _candidate_from_record
+from .candidate_screening import LABELS, _candidate_from_record
 
 
 REQUIRED_HEADINGS = (

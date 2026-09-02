@@ -12,8 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-import nisa_quant.phase2 as phase2_module
-from nisa_quant.phase2 import (
+import nisa_quant.evidence_collection as phase2_module
+from nisa_quant.evidence_collection import (
     _configured_sec_rate,
     _configured_timeout,
     _persist_refresh_scope,
@@ -25,7 +25,7 @@ from nisa_quant.phase2 import (
     refresh_phase2_configured,
     refresh_phase2_fixtures,
 )
-from nisa_quant.phase2_sources import (
+from nisa_quant.evidence_providers import (
     AlphaVantageMarketProvider,
     EvidenceRecord,
     FixtureMarketProvider,
@@ -47,7 +47,7 @@ from nisa_quant.phase2_sources import (
     normalize_sec_submissions,
     validate_public_reference,
 )
-from nisa_quant.schema import connect_database, initialize_database
+from nisa_quant.database_schema import connect_database, initialize_database
 
 
 UNIVERSE_COLUMNS = (
@@ -867,12 +867,12 @@ class Phase2ReviewRegressionTests(unittest.TestCase):
                 raise AssertionError("transport must not run after failed host validation")
 
         with patch(
-            "nisa_quant.phase2_sources.socket.getaddrinfo",
+            "nisa_quant.evidence_providers.socket.getaddrinfo",
             return_value=[(2, 1, 6, "", ("192.168.1.10", 443))],
         ):
             with self.assertRaises(ValueError):
                 RssFeedProvider(Transport(), config).fetch(retrieved_at="2026-09-01T00:00:00+00:00")
-        with patch("nisa_quant.phase2_sources.socket.getaddrinfo", side_effect=OSError("unknown host")):
+        with patch("nisa_quant.evidence_providers.socket.getaddrinfo", side_effect=OSError("unknown host")):
             with self.assertRaises(ValueError):
                 RssFeedProvider(Transport(), config).fetch(retrieved_at="2026-09-01T00:00:00+00:00")
 
@@ -1292,7 +1292,7 @@ class Phase2ReviewRegressionTests(unittest.TestCase):
             }), encoding="utf-8")
             connection = new_connection()
             self.addCleanup(connection.close)
-            with patch("nisa_quant.phase2.RssFeedProvider.fetch", return_value=[]):
+            with patch("nisa_quant.evidence_collection.RssFeedProvider.fetch", return_value=[]):
                 result = refresh_phase2_configured(
                     connection, config_path=config, universe_path=universe,
                     as_of="2026-09-01", request_id="empty-rss", transport=object(),
@@ -2169,7 +2169,7 @@ class Phase2ConsolidatedRepairTests(unittest.TestCase):
         self.assertEqual(connected, [("93.184.216.34", 443, 3)])
 
     def test_urllib_transport_rejects_a_private_connected_peer(self) -> None:
-        from nisa_quant.phase2_sources import _BoundHTTPSConnection
+        from nisa_quant.evidence_providers import _BoundHTTPSConnection
 
         class Socket:
             def getpeername(self) -> tuple[str, int]:
@@ -3009,7 +3009,7 @@ class Phase2ConsolidatedRepairTests(unittest.TestCase):
             "INSERT INTO phase2_market_observation_bindings VALUES ('legacy-request', 'legacy-observation')"
         )
         connection.commit()
-        with patch("nisa_quant.schema._backfill_market_identity", side_effect=RuntimeError("injected migration interruption")):
+        with patch("nisa_quant.database_schema._backfill_market_identity", side_effect=RuntimeError("injected migration interruption")):
             with self.assertRaisesRegex(RuntimeError, "injected migration interruption"):
                 initialize_database(connection)
         self.assertEqual(connection.execute(

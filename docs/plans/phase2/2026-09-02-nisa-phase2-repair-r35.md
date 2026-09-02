@@ -26,7 +26,7 @@ Prohibited: credentials, broker login/write/order execution, Discord delivery, a
 ### Task 1: Prove and prevent partial universe persistence
 
 **Files:**
-- Modify: `src/nisa_quant/phase2.py`
+- Modify: `src/nisa_quant/evidence_collection.py`
 - Modify: `tests/test_phase2.py`
 
 - [x] Write a regression using valid-then-invalid CSV rows and the existing real SQLite schema; exercise in-memory and file-backed databases with `commit=True` and `commit=False`.

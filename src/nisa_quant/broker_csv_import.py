@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from .sources import add_source_record, normalize_retrieved_at, safe_add, safe_divide, safe_multiply, utc_now
+from .source_records import add_source_record, normalize_retrieved_at, safe_add, safe_divide, safe_multiply, utc_now
 
 
 EXPECTED_COLUMNS = (

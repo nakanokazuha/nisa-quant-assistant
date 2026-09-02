@@ -7,11 +7,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from nisa_quant.imports import import_csv
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.screens import run_screens
-from nisa_quant.sources import import_price_fixture
+from nisa_quant.broker_csv_import import import_csv
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.candidate_screening import run_screens
+from nisa_quant.source_records import import_price_fixture
 from tests.test_time_helpers import current_utc_date
 
 

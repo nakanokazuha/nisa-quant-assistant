@@ -7,11 +7,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-import nisa_quant.screens as screens
-from nisa_quant.journal import evaluate_recommendation
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.sources import add_source_record
+import nisa_quant.candidate_screening as screens
+from nisa_quant.recommendation_journal import evaluate_recommendation
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.source_records import add_source_record
 
 
 def new_connection() -> sqlite3.Connection:

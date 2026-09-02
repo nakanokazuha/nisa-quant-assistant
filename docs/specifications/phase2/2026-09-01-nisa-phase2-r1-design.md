@@ -18,8 +18,8 @@ actions.
 
 ## Architecture
 
-The Phase 2 implementation is isolated in `nisa_quant.phase2` and
-`nisa_quant.phase2_sources`. It uses the existing UTC and fail-closed source
+The Phase 2 implementation is isolated in `nisa_quant.evidence_collection` and
+`nisa_quant.evidence_providers`. It uses the existing UTC and fail-closed source
 validation principles but has separate tables because the legacy
 `source_records` table cannot represent OHLCV, filing periods, article
 metadata, or watch-alert semantics without weakening its closed fact contract.

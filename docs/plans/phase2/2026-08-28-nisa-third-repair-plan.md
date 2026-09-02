@@ -12,7 +12,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 
 **Tech Stack:** Python 3, stdlib `sqlite3`, `unittest`, Markdown rendering, canonical JSON/SHA-256.
 
-**Spec:** `NISA_QUANT_ASSISTANT_SPEC.md` and the user-provided third-repair requirements.
+**Spec:** `docs/specification.md` and the user-provided third-repair requirements.
 
 ## Global Constraints
 
@@ -25,7 +25,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 ### Task 1: Historical metadata and deterministic source identity
 
 **Files:**
-- Modify: `src/nisa_quant/schema.py`, `src/nisa_quant/watchlist.py`, `src/nisa_quant/metrics.py`, `src/nisa_quant/screens.py`
+- Modify: `src/nisa_quant/database_schema.py`, `src/nisa_quant/watchlist.py`, `src/nisa_quant/portfolio_metrics.py`, `src/nisa_quant/candidate_screening.py`
 - Test: `tests/test_repairs.py`
 
 - [ ] Write tests for adding/editing watchlist versions, latest authoritative identical refreshes, conflicting same-date values, undeclared benchmarks, and typed benchmark propagation.
@@ -37,7 +37,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 ### Task 2: Portfolio-level risk and fail-closed aggregation
 
 **Files:**
-- Modify: `src/nisa_quant/metrics.py`
+- Modify: `src/nisa_quant/portfolio_metrics.py`
 - Test: `tests/test_repairs.py`
 
 - [ ] Write tests for common-date alignment, returned portfolio drawdown, and conflicting/partial holding data.
@@ -48,7 +48,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 ### Task 3: Structured report provenance and redaction
 
 **Files:**
-- Modify: `src/nisa_quant/reports.py`
+- Modify: `src/nisa_quant/report_rendering.py`
 - Test: `tests/test_repairs.py`
 
 - [ ] Write tests for unsupported prose labels, unrelated/invented source IDs, altered metrics/reasons/aggregates, missing ledger/distribution derivation, and secret/account/PII filename redaction with ordinary explanatory `token` allowed.
@@ -59,7 +59,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 ### Task 4: Strict journal validation
 
 **Files:**
-- Modify: `src/nisa_quant/journal.py`, `src/nisa_quant/schema.py`
+- Modify: `src/nisa_quant/recommendation_journal.py`, `src/nisa_quant/database_schema.py`
 - Test: `tests/test_repairs.py`, `tests/test_reports_journal.py`
 
 - [ ] Write tests for future/mismatched cutoffs, altered candidate fields, invented/uncited sources, future and stale/conflicting outcomes, wrong typed benchmark/currency, and one valid later outcome.
@@ -70,7 +70,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 ### Task 5: Documentation and final verification
 
 **Files:**
-- Modify: `README.md` and module/schema comments.
+- Modify: `docs/README.md` and module/schema comments.
 
 - [ ] Document versioned watchlist metadata, typed benchmarks, source refresh policy, aligned portfolio risk, report provenance, and journal evidence rules.
 - [ ] Run the complete unittest, compileall, CLI help, fresh temp-directory E2E, adversarial probes, `git diff --check`, AST parse, secret/scope scan, and final status.

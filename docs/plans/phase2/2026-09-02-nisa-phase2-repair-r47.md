@@ -53,7 +53,7 @@ Expected: failures showing partial market persistence, evidence surviving caller
 ### Task 2: Implement the shared boundary repair
 
 **Files:**
-- Modify: `src/nisa_quant/phase2.py`
+- Modify: `src/nisa_quant/evidence_collection.py`
 
 **Interfaces:**
 - Consumes: Existing canonical identity functions, `contains_control_content`, scope tables, bindings, and report queries.
@@ -84,7 +84,7 @@ Expected: failures showing partial market persistence, evidence surviving caller
 ### Task 3: Verify, review, and hand off
 
 **Files:**
-- Inspect: `src/nisa_quant/phase2.py`, `tests/test_phase2.py`, and the complete dirty diff.
+- Inspect: `src/nisa_quant/evidence_collection.py`, `tests/test_phase2.py`, and the complete dirty diff.
 
 **Interfaces:**
 - Consumes: Task 1 regressions and Task 2 implementation.

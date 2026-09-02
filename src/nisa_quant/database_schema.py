@@ -16,7 +16,7 @@ import sqlite3
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from .phase2_sources import canonical_market_observation
+from .evidence_providers import canonical_market_observation
 
 
 ACCOUNT_TYPES = (

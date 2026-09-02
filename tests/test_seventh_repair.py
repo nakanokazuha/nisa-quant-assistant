@@ -7,11 +7,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from nisa_quant.imports import import_csv
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.reports import render_report, validate_report
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.sources import add_source_record
+from nisa_quant.broker_csv_import import import_csv
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.report_rendering import render_report, validate_report
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.source_records import add_source_record
 from nisa_quant.watchlist import add_watchlist_item, watchlist_as_of
 
 
@@ -22,16 +22,16 @@ BROKER_COLUMNS = (
 )
 MARKER = "Historical research / deferred — not active implementation instructions"
 RESEARCH_ARTIFACTS = (
-    "NISA_AI_INTEGRATION_REPORT.md",
-    "NISA_QUANT_ASSISTANT_PLAN.md",
-    "NISA_QUANT_ASSISTANT_SPEC.md",
-    "deleg3-broker-workflows.md",
-    "deleg3-full-tail.md",
-    "deleg3-sources.txt",
-    "subagent1-frameworks-data.md",
-    "subagent2-signals-mcp.md",
-    "subagent3-brokers-jquants.md",
-    "verified-repos.md",
+    "docs/research/NISA_AI_INTEGRATION_REPORT.md",
+    "docs/plan.md",
+    "docs/specification.md",
+    "docs/research/deleg3-broker-workflows.md",
+    "docs/research/deleg3-full-tail.md",
+    "docs/research/deleg3-sources.txt",
+    "docs/research/subagent1-frameworks-data.md",
+    "docs/research/subagent2-signals-mcp.md",
+    "docs/research/subagent3-brokers-jquants.md",
+    "docs/research/verified-repos.md",
 )
 
 

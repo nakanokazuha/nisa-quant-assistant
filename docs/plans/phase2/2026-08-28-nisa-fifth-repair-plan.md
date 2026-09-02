@@ -12,7 +12,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 
 **Tech Stack:** Python 3 standard library, `sqlite3`, `unittest`, Markdown, AST/compile checks; no new dependencies.
 
-**Spec:** `NISA_QUANT_ASSISTANT_SPEC.md` plus the fifth final-release repair requirements supplied by the user.
+**Spec:** `docs/specification.md` plus the fifth final-release repair requirements supplied by the user.
 
 ## Global Constraints
 
@@ -23,7 +23,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 
 ### Task 1: Historical metadata and source metadata fail-closed validation
 
-**Files:** `tests/test_repairs.py`, `src/nisa_quant/sources.py`, `src/nisa_quant/metrics.py`, `src/nisa_quant/watchlist.py`, `README.md`
+**Files:** `tests/test_repairs.py`, `src/nisa_quant/source_records.py`, `src/nisa_quant/portfolio_metrics.py`, `src/nisa_quant/watchlist.py`, `docs/README.md`
 
 - [x] Add RED tests for future watchlist metadata not leaking into a historical holding, rejected/quarantined missing unit/currency/arbitrary freshness, stale distributions and benchmarks being unusable, and preserved warnings/provenance.
 - [x] Run only those tests and record the expected failures.
@@ -32,7 +32,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 
 ### Task 2: Chronological broker import
 
-**Files:** `tests/test_repairs.py`, `src/nisa_quant/imports.py`
+**Files:** `tests/test_repairs.py`, `src/nisa_quant/broker_csv_import.py`
 
 - [x] Add a reverse-ordered BUY/SELL regression asserting both rows are accepted, average-cost quantity/basis is correct, and realized P/L is retained.
 - [x] Run it RED.
@@ -41,7 +41,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 
 ### Task 3: Canonical structured report validation
 
-**Files:** `tests/test_repairs.py`, `src/nisa_quant/reports.py`, `README.md`
+**Files:** `tests/test_repairs.py`, `src/nisa_quant/report_rendering.py`, `docs/README.md`
 
 - [x] Add RED tests for the exact uncited injection, valid explanatory prose, altered metrics, invented sources, extra/missing candidate rows, unsupported actions in free prose, secret-shaped values, and ordinary explanatory `token`.
 - [x] Run focused report tests RED.
@@ -50,7 +50,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 
 ### Task 4: Cited outcome evidence gate
 
-**Files:** `tests/test_repairs.py`, `src/nisa_quant/journal.py`
+**Files:** `tests/test_repairs.py`, `src/nisa_quant/recommendation_journal.py`
 
 - [x] Add RED regression for an unrelated later distribution not authorizing an evaluation with January 2 cited price/benchmark, plus one valid later evidence case.
 - [x] Run it RED.
@@ -59,7 +59,7 @@ Release boundary: Implemented now: local fixture/CSV/SQLite/CLI only. Deferred/n
 
 ### Task 5: Snapshot warning and currency accounting
 
-**Files:** `tests/test_repairs.py`, `src/nisa_quant/metrics.py`, `README.md`
+**Files:** `tests/test_repairs.py`, `src/nisa_quant/portfolio_metrics.py`, `docs/README.md`
 
 - [x] Add RED tests excluding undated historical warnings, retaining dated cutoff behavior, and asserting deterministic `cost_basis_by_currency` / `realized_pl_by_currency` with unavailable mixed-currency aggregates.
 - [x] Run them RED.

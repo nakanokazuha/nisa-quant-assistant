@@ -16,7 +16,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
-from .phase2_sources import (
+from .evidence_providers import (
     EvidenceRecord,
     ALPHA_VANTAGE_HOSTS,
     FixtureMarketProvider,
@@ -37,7 +37,7 @@ from .phase2_sources import (
     validate_public_reference as _validate_public_reference_impl,
     validate_provider_url,
 )
-from .sources import normalize_retrieved_at, parse_retrieved_at, utc_now
+from .source_records import normalize_retrieved_at, parse_retrieved_at, utc_now
 
 
 UNIVERSE_COLUMNS = (
@@ -1757,7 +1757,7 @@ def refresh_phase2_configured(
                 if not key or str(key).startswith("[REDACTED"):
                     _record_failure(connection, request_id=request_id, source_name="alpha-vantage", failure_code="configuration_required", message="Alpha Vantage API key is not configured", observed_at=event_at, scope_id=scope_id)
                 else:
-                    from .phase2_sources import AlphaVantageMarketProvider
+                    from .evidence_providers import AlphaVantageMarketProvider
                     market_usable: list[bool] = []
                     accepted_market = refresh_market_observations(connection, AlphaVantageMarketProvider(str(key), runtime_transport, base_url=market_base, timeout_seconds=_configured_timeout(market_cfg.get("timeout_seconds"), 15)), [row["ticker"] for row in members], request_id=request_id, retrieved_at=event_at, commit=False, sensitive_values=(str(key),), usable_result=market_usable, as_of=cutoff, scope_id=scope_id)
                     configured_provider_succeeded = bool(market_usable and market_usable[0])

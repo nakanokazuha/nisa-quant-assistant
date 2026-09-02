@@ -14,7 +14,7 @@ Prohibited boundaries: credentials, broker login/write/order execution, Discord 
 
 **Files:**
 - Modify: `src/nisa_quant/watchlist.py`
-- Modify: `src/nisa_quant/schema.py`
+- Modify: `src/nisa_quant/database_schema.py`
 - Test: `tests/test_eleventh_repair.py`
 
 **Interfaces:**
@@ -32,8 +32,8 @@ Prohibited boundaries: credentials, broker login/write/order execution, Discord 
 ### Task 2: Typed source-bound transaction and cash replay
 
 **Files:**
-- Modify: `src/nisa_quant/metrics.py`
-- Modify: `src/nisa_quant/sources.py` only if the shared usability contract needs a narrowly scoped helper
+- Modify: `src/nisa_quant/portfolio_metrics.py`
+- Modify: `src/nisa_quant/source_records.py` only if the shared usability contract needs a narrowly scoped helper
 - Test: `tests/test_eleventh_repair.py`
 
 **Interfaces:**
@@ -51,8 +51,8 @@ Prohibited boundaries: credentials, broker login/write/order execution, Discord 
 ### Task 3: Report safety and renderer contract binding
 
 **Files:**
-- Modify: `src/nisa_quant/reports.py`
-- Modify: `README.md`
+- Modify: `src/nisa_quant/report_rendering.py`
+- Modify: `docs/README.md`
 - Test: `tests/test_eleventh_repair.py`
 - Modify: `tests/test_reports_journal.py` only where the new explicit contract is tested
 
@@ -71,8 +71,8 @@ Prohibited boundaries: credentials, broker login/write/order execution, Discord 
 ### Task 4: Documentation and complete verification
 
 **Files:**
-- Modify: `README.md`
-- Modify: relevant module comments/docstrings in `src/nisa_quant/schema.py`, `src/nisa_quant/watchlist.py`, `src/nisa_quant/metrics.py`, and `src/nisa_quant/reports.py` as needed
+- Modify: `docs/README.md`
+- Modify: relevant module comments/docstrings in `src/nisa_quant/database_schema.py`, `src/nisa_quant/watchlist.py`, `src/nisa_quant/portfolio_metrics.py`, and `src/nisa_quant/report_rendering.py` as needed
 - Test: `tests/test_eleventh_repair.py`
 
 - [ ] **Step 1: Add regression comments/assertions** that state the materialization, migration, source-binding, and report contracts.

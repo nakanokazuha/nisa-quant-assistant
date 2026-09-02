@@ -6,7 +6,7 @@ The existing local broker CSV, Japan fixture, deterministic metric, screen, repo
 
 ## Phase 2 source status
 
-See [`docs/phase2-sources.md`](docs/phase2-sources.md) for verified endpoint references, freshness/licensing assumptions, and manual setup. The checked-in Phase 2 fixtures are synthetic and prove the same normalization path without secrets or live retrieval.
+See [`sources/phase2.md`](sources/phase2.md) for verified endpoint references, freshness/licensing assumptions, and manual setup. The checked-in Phase 2 fixtures are synthetic and prove the same normalization path without secrets or live retrieval.
 
 Implemented and reproducible:
 

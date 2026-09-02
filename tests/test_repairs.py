@@ -8,13 +8,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from nisa_quant.imports import import_csv
-from nisa_quant.journal import evaluate_recommendation, record_recommendation
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.reports import render_report, validate_report
-from nisa_quant.schema import connect_database, initialize_database
-from nisa_quant.screens import run_screens
-from nisa_quant.sources import add_source_record, import_distribution_fixture, import_price_fixture
+from nisa_quant.broker_csv_import import import_csv
+from nisa_quant.recommendation_journal import evaluate_recommendation, record_recommendation
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.report_rendering import render_report, validate_report
+from nisa_quant.database_schema import connect_database, initialize_database
+from nisa_quant.candidate_screening import run_screens
+from nisa_quant.source_records import add_source_record, import_distribution_fixture, import_price_fixture
 from tests.test_time_helpers import current_utc_date
 
 
@@ -88,7 +88,7 @@ class TemporalAndImportRepairTests(unittest.TestCase):
             connection.close()
 
     def test_benchmark_alias_requires_explicit_typed_link(self) -> None:
-        from nisa_quant.schema import link_instruments
+        from nisa_quant.database_schema import link_instruments
         from nisa_quant.watchlist import add_watchlist_item
 
         with tempfile.TemporaryDirectory() as directory:
@@ -372,7 +372,7 @@ Manual review required; no order was placed.
             ])
             import_csv(connection, path, source_name="fixture")
 
-            import nisa_quant.schema as schema
+            import nisa_quant.database_schema as schema
 
             self.assertTrue(hasattr(schema, "add_instrument_link"))
             if not hasattr(schema, "add_instrument_link"):

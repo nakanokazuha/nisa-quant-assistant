@@ -7,11 +7,11 @@ import unittest
 
 from tests.test_nineteenth_repair import minimal_report, recommendation_fixture
 
-from nisa_quant.journal import evaluate_recommendation
-from nisa_quant.metrics import calculate_snapshot
-from nisa_quant.reports import validate_report
-from nisa_quant.screens import run_screens
-from nisa_quant.sources import add_source_record
+from nisa_quant.recommendation_journal import evaluate_recommendation
+from nisa_quant.portfolio_metrics import calculate_snapshot
+from nisa_quant.report_rendering import validate_report
+from nisa_quant.candidate_screening import run_screens
+from nisa_quant.source_records import add_source_record
 from nisa_quant.watchlist import add_watchlist_item
 
 
@@ -74,7 +74,7 @@ class TwentyFirstRepairConflictTests(unittest.TestCase):
         self.assertNotIn(original_price_id, candidate["source_ids"])
         self.assertNotIn(conflicting_price_id, candidate["source_ids"])
 
-        from nisa_quant.journal import record_recommendation
+        from nisa_quant.recommendation_journal import record_recommendation
 
         safe_recommendation_id = record_recommendation(
             connection,

@@ -14,7 +14,7 @@ Prohibited: credentials, broker login/write/order execution, and Yume iOS change
 
 **Tech Stack:** Python 3, stdlib `unittest`, SQLite, `sqlite3.Connection`, `apply_patch`.
 
-**Spec:** `NISA_QUANT_ASSISTANT_SPEC.md` and the user-provided `nisa-phase2-repair-r56` contract.
+**Spec:** `docs/specification.md` and the user-provided `nisa-phase2-repair-r56` contract.
 
 ## Global Constraints
 
@@ -47,7 +47,7 @@ Prohibited: credentials, broker login/write/order execution, and Yume iOS change
 ### Task 2: Implement batch-local conflict detection
 
 **Files:**
-- Modify: `src/nisa_quant/phase2.py`
+- Modify: `src/nisa_quant/evidence_collection.py`
 
 **Interfaces:**
 - Consume the current batch’s inserted/replayed market observation IDs and evidence IDs at the existing persistence boundary.
