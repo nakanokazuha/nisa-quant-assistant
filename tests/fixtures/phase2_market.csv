@@ -1,2 +1,0 @@
-ticker,observation_date,open,high,low,close,volume,currency,retrieved_at,citation
-ABC,2026-08-31,100,105,99,104,123456,USD,2026-09-01T01:00:00+09:00,https://example.test/phase2-market/ABC/2026-08-31

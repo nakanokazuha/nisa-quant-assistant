@@ -6,7 +6,7 @@ The existing local broker CSV, Japan fixture, deterministic metric, screen, repo
 
 ## Phase 2 source status
 
-See [`sources/phase2.md`](sources/phase2.md) for verified endpoint references, freshness/licensing assumptions, and manual setup. The checked-in Phase 2 fixtures are synthetic and prove the same normalization path without secrets or live retrieval.
+See [`sources/phase2.md`](sources/phase2.md) for endpoint references, freshness/licensing assumptions, and manual setup. See [`sources/fixtures.md`](sources/fixtures.md) for the provenance and limitations of the small checked-in public-reference fixtures. The normal Phase 2 fixture path is deterministic and offline; its RSS parser control and adversarial inputs remain explicitly synthetic.
 
 Implemented and reproducible:
 
@@ -67,14 +67,35 @@ PYTHONPATH=src python3 -m nisa_quant screens --db "$database" --as-of 2026-08-30
 PYTHONPATH=src python3 -m nisa_quant report --db "$database" --as-of 2026-08-30 --output "$report"
 ```
 
-Phase 2 fixture-backed evidence flow:
+The commands above are the legacy compatibility path and use synthetic broker,
+price, and distribution controls. They are separate from the Phase 2 evidence
+flow.
+
+Phase 2 fixture-backed evidence flow (offline, public-reference subset):
 
 ```bash
-PYTHONPATH=src python3 -m nisa_quant phase2-refresh-fixtures --db "$database" --universe-csv tests/fixtures/phase2_universe.csv --market-csv tests/fixtures/phase2_market.csv --as-of 2026-09-01 --request-id phase2-demo-1
-PYTHONPATH=src python3 -m nisa_quant phase2-evidence --db "$database" --as-of 2026-09-01
+PYTHONPATH=src python3 -m nisa_quant phase2-refresh-fixtures --db "$database" --universe-csv tests/fixtures/phase2_reference_universe.csv --market-csv tests/fixtures/phase2_reference_market.csv --as-of 2026-09-04 --request-id phase2-reference-demo-1
+PYTHONPATH=src python3 -m nisa_quant phase2-evidence --db "$database" --as-of 2026-09-04
 ```
 
-The Phase 2 output contains only universe, market, filing/news/alert evidence, freshness, provenance, and warnings. It does not invoke `screens`, `report`, or `journal`.
+This checked-in subset contains AAPL and MSFT only. The 2024 market
+observations are deliberately retained as historical reference rows but are
+stale at the 2026-09-04 cutoff, so the report audits them as failures rather
+than presenting them as usable current observations. The output contains only
+universe, market, filing/news/alert evidence, freshness, provenance, and
+warnings. It does not invoke `screens`, `report`, or `journal`.
+
+Configured automatic provider flow (networked only when the caller supplies a
+configuration and runs it):
+
+```bash
+PYTHONPATH=src python3 -m nisa_quant phase2-refresh-config --config CONFIG --universe-csv CSV --db "$database" --as-of YYYY-MM-DD --request-id phase2-configured-1
+```
+
+This uses the configured API/RSS adapters and their security, rate, terms, and
+User-Agent requirements. Tests do not call those endpoints. The optional
+manual broker CSV path is the separate legacy `import-csv` command above; it is
+not a Phase 2 provider and does not replace automatic retrieval.
 
 Live provider transport resolves configured hostnames before a request and fails
 closed if resolution is uncertain or returns a private, loopback, link-local,

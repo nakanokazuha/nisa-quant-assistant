@@ -59,6 +59,14 @@ MARKET_COLUMNS = (
     "ticker", "observation_date", "open", "high", "low", "close", "volume",
     "currency", "retrieved_at", "citation",
 )
+FIXTURES = Path(__file__).parent / "fixtures"
+REFERENCE_AS_OF = "2026-09-04"
+REFERENCE_UNIVERSE = FIXTURES / "phase2_reference_universe.csv"
+REFERENCE_MARKET = FIXTURES / "phase2_reference_market.csv"
+
+
+def load_reference_sec_fixture(name: str) -> dict[str, object]:
+    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
 def write_csv(path: Path, columns: tuple[str, ...], rows: list[dict[str, str]]) -> None:
@@ -69,6 +77,9 @@ def write_csv(path: Path, columns: tuple[str, ...], rows: list[dict[str, str]]) 
 
 
 def universe_row(**overrides: str) -> dict[str, str]:
+    # These helpers intentionally remain synthetic for unit, malformed-input,
+    # conflict, and security-boundary cases. The normal acceptance flow uses
+    # the checked-in AAPL/MSFT reference fixtures above.
     row = {
         "universe_id": "sp500-2026-08-31",
         "effective_date": "2026-08-31",
@@ -355,37 +366,71 @@ class Phase2EvidenceTests(unittest.TestCase):
         self.assertEqual(calls[0][1]["User-Agent"], "Ilham research [REDACTED]")
         self.assertEqual(calls[0][2], 20)
 
-    def test_sec_filing_and_fact_metadata_is_normalized_without_invention(self) -> None:
-        payload = {
-            "filings": {"recent": {
-                "accessionNumber": ["0000000001-26-000001"],
-                "filingDate": ["2026-08-31"], "reportDate": ["2026-08-29"],
-                "form": ["4"], "primaryDocument": ["ownership.xml"],
-            }},
-        }
-        filings = normalize_sec_submissions(
-            payload, ticker="ABC", cik="0000000001", retrieved_at="2026-09-01T00:00:00+00:00",
-        )
-        self.assertEqual(filings[0].evidence_subtype, "form_4")
-        self.assertEqual(filings[0].uncertainty_status, "filing_lag")
-        self.assertEqual(filings[0].ticker, "ABC")
+    def test_sec_reference_fixtures_normalize_official_metadata_without_invention(self) -> None:
+        submissions: list[EvidenceRecord] = []
+        facts: list[EvidenceRecord] = []
+        for ticker, cik in (("AAPL", "0000320193"), ("MSFT", "0000789019")):
+            submission_fixture = load_reference_sec_fixture(
+                f"phase2_reference_sec_{ticker.lower()}_submissions.json",
+            )
+            self.assertEqual(submission_fixture["target"], {"ticker": ticker, "cik": cik})
+            submission_payload = submission_fixture["payload"]
+            self.assertIsInstance(submission_payload, dict)
+            submission_records = normalize_sec_submissions(
+                submission_payload,
+                ticker=ticker,
+                cik=cik,
+                retrieved_at=str(submission_fixture["retrieved_at"]),
+                source_url=str(submission_fixture["source_url"]),
+            )
+            self.assertEqual(len(submission_records), 1)
+            self.assertEqual(submission_records[0].source_identifier, {
+                "AAPL": "0000320193-23-000106",
+                "MSFT": "0000789019-26-000141",
+            }[ticker])
+            self.assertEqual(submission_records[0].ticker, ticker)
+            self.assertEqual(submission_records[0].issuer_cik, cik)
+            self.assertEqual(submission_records[0].period_end, {
+                "AAPL": "2023-09-30", "MSFT": "2026-08-04",
+            }[ticker])
+            submissions.extend(submission_records)
 
-        facts = normalize_sec_company_facts({
-            "cik": "0000000001",
-            "facts": {"us-gaap": {"Revenue": {"units": {"USD": [{
-                "end": "2026-06-30", "val": 123, "accn": "0000000001-26-000002",
-                "form": "10-Q", "filed": "2026-08-01", "fy": 2026, "fp": "Q2",
-            }]}}}},
-        }, ticker="ABC", cik="0000000001", retrieved_at="2026-09-01T00:00:00+00:00")
-        self.assertEqual(facts[0].fact_field, "Revenue")
-        self.assertEqual(facts[0].period_end, "2026-06-30")
-        self.assertEqual(facts[0].fact_value, "123")
+            fact_fixture = load_reference_sec_fixture(
+                f"phase2_reference_sec_{ticker.lower()}_companyfacts.json",
+            )
+            self.assertEqual(fact_fixture["target"], {"ticker": ticker, "cik": cik})
+            if ticker == "MSFT":
+                self.assertEqual(fact_fixture["source_accession"], "0000950170-23-035122")
+            fact_payload = fact_fixture["payload"]
+            self.assertIsInstance(fact_payload, dict)
+            fact_records = normalize_sec_company_facts(
+                fact_payload,
+                ticker=ticker,
+                cik=cik,
+                retrieved_at=str(fact_fixture["retrieved_at"]),
+                source_url=str(fact_fixture["source_url"]),
+            )
+            self.assertEqual(len(fact_records), 1)
+            self.assertEqual(fact_records[0].ticker, ticker)
+            self.assertEqual(fact_records[0].issuer_cik, cik)
+            facts.extend(fact_records)
 
+        self.assertEqual({record.fact_value for record in facts}, {"383285000000", "211915000000"})
+        self.assertEqual({record.citation for record in submissions}, {
+            "https://www.sec.gov/Archives/edgar/data/320193/000032019323000106/aapl-20230930.htm",
+            "https://www.sec.gov/Archives/edgar/data/789019/000078901926000141/form4.html",
+        })
         connection = new_connection()
         self.addCleanup(connection.close)
-        seed_universe(connection)
-        self.assertEqual(ingest_evidence(connection, filings + facts, request_id="sec-a"), 2)
-        self.assertEqual(ingest_evidence(connection, filings + facts, request_id="sec-a"), 0)
+        self.assertEqual(import_sp500_universe(
+            connection, REFERENCE_UNIVERSE, request_id="reference-sec-universe",
+        ), 2)
+        self.assertEqual(ingest_evidence(
+            connection, submissions + facts, request_id="sec-reference", as_of=REFERENCE_AS_OF,
+        ), 4)
+        self.assertEqual(ingest_evidence(
+            connection, submissions + facts, request_id="sec-reference", as_of=REFERENCE_AS_OF,
+        ), 0)
 
     def test_sec_ownership_lag_and_ambiguous_or_wrong_mapping_fail_closed(self) -> None:
         payload = {"filings": {"recent": {
@@ -430,6 +475,24 @@ class Phase2EvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             normalize_rss_feed(b"<rss><channel>", config=config, retrieved_at="2026-09-01T01:00:00+00:00")
 
+    def test_explicit_synthetic_news_fixture_exercises_local_parser_path(self) -> None:
+        config = RssSourceConfig(
+            source_name="Synthetic local parser fixture",
+            source_url="https://example.test/feed.xml",
+            source_version="synthetic-rss-v1",
+            terms_url="https://example.test/terms",
+            entity_aliases={"AAPL": ("AAPL",)},
+            content_policy="metadata_only",
+        )
+        records = normalize_rss_feed(
+            (FIXTURES / "phase2_synthetic_news.xml").read_bytes(),
+            config=config,
+            retrieved_at="2026-09-04T00:00:00+00:00",
+        )
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].ticker, "AAPL")
+        self.assertEqual(records[0].evidence_text, "AAPL synthetic parser update")
+
     def test_sec_normalizers_reject_nonofficial_source_hosts(self) -> None:
         payload = {"filings": {"recent": {
             "accessionNumber": ["0000000001-26-000001"], "filingDate": ["2026-08-31"],
@@ -445,28 +508,29 @@ class Phase2BoundaryAndE2ETests(unittest.TestCase):
     def test_refresh_and_evidence_report_are_deterministic_and_have_no_action_surface(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            universe = root / "universe.csv"
-            market = root / "market.csv"
-            write_csv(universe, UNIVERSE_COLUMNS, [universe_row()])
-            write_csv(market, MARKET_COLUMNS, [market_row()])
             connection = connect_database(root / "phase2.sqlite")
             initialize_database(connection)
             self.addCleanup(connection.close)
             first = refresh_phase2_fixtures(
-                connection, universe_path=universe, market_path=market,
-                as_of="2026-09-01", request_id="e2e-a",
+                connection, universe_path=REFERENCE_UNIVERSE, market_path=REFERENCE_MARKET,
+                as_of=REFERENCE_AS_OF, request_id="e2e-a",
             )
             second = refresh_phase2_fixtures(
-                connection, universe_path=universe, market_path=market,
-                as_of="2026-09-01", request_id="e2e-a",
+                connection, universe_path=REFERENCE_UNIVERSE, market_path=REFERENCE_MARKET,
+                as_of=REFERENCE_AS_OF, request_id="e2e-a",
             )
-            self.assertEqual(first.accepted_market_observations, 5)
-            self.assertEqual(second.accepted_market_observations, 5)
-            report = phase2_evidence_report(connection, as_of="2026-09-01")
+            self.assertEqual(first.accepted_universe_members, 2)
+            self.assertEqual(first.accepted_market_observations, 40)
+            self.assertEqual(second.accepted_market_observations, 40)
+            self.assertEqual(first.status, "completed_with_warnings")
+            report = phase2_evidence_report(connection, as_of=REFERENCE_AS_OF)
             serialized = json.dumps(report, sort_keys=True).upper()
             for forbidden in ("BUY", "HOLD", "SELL", "ORDER", "BROKER"):
                 self.assertNotIn(forbidden, serialized)
             self.assertEqual(report["phase"], "phase2-evidence")
+            self.assertEqual({row["ticker"] for row in report["universe"]}, {"AAPL", "MSFT"})
+            self.assertEqual(report["market_observations"], [])
+            self.assertEqual(report["counts"]["failures"], 2)
             self.assertTrue(report["snapshot_hash"])
 
     def test_configured_refresh_wires_market_sec_companyfacts_and_reports_missing_sources(self) -> None:

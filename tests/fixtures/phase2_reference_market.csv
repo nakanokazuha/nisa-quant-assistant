@@ -1,0 +1,9 @@
+ticker,observation_date,open,high,low,close,volume,currency,retrieved_at,citation
+AAPL,2024-01-02,187.15,188.44,183.89,185.64,82488700,USD,2026-09-04T00:00:00+00:00,https://query1.finance.yahoo.com/v8/finance/chart/AAPL?period1=1704153600&period2=1704585600&interval=1d&events=history
+AAPL,2024-01-03,184.22,185.88,183.43,184.25,58414500,USD,2026-09-04T00:00:00+00:00,https://query1.finance.yahoo.com/v8/finance/chart/AAPL?period1=1704153600&period2=1704585600&interval=1d&events=history
+AAPL,2024-01-04,182.15,183.09,180.88,181.91,71983600,USD,2026-09-04T00:00:00+00:00,https://query1.finance.yahoo.com/v8/finance/chart/AAPL?period1=1704153600&period2=1704585600&interval=1d&events=history
+AAPL,2024-01-05,181.99,182.76,180.17,181.18,62379700,USD,2026-09-04T00:00:00+00:00,https://query1.finance.yahoo.com/v8/finance/chart/AAPL?period1=1704153600&period2=1704585600&interval=1d&events=history
+MSFT,2024-01-02,373.86,375.90,366.77,370.87,25258600,USD,2026-09-04T00:00:00+00:00,https://query1.finance.yahoo.com/v8/finance/chart/MSFT?period1=1704153600&period2=1704585600&interval=1d&events=history
+MSFT,2024-01-03,369.01,373.26,368.51,370.60,23083500,USD,2026-09-04T00:00:00+00:00,https://query1.finance.yahoo.com/v8/finance/chart/MSFT?period1=1704153600&period2=1704585600&interval=1d&events=history
+MSFT,2024-01-04,370.67,373.10,367.17,367.94,20901500,USD,2026-09-04T00:00:00+00:00,https://query1.finance.yahoo.com/v8/finance/chart/MSFT?period1=1704153600&period2=1704585600&interval=1d&events=history
+MSFT,2024-01-05,368.97,372.06,366.50,367.75,21004600,USD,2026-09-04T00:00:00+00:00,https://query1.finance.yahoo.com/v8/finance/chart/MSFT?period1=1704153600&period2=1704585600&interval=1d&events=history

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Synthetic parser fixture</title>
+    <item>
+      <guid>phase2-synthetic-news-1</guid>
+      <link>https://example.test/news/phase2-synthetic-news-1</link>
+      <title>AAPL synthetic parser update</title>
+      <description>Synthetic local parser content; not a public historical news item.</description>
+      <pubDate>Tue, 01 Sep 2026 00:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

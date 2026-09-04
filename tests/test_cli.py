@@ -7,6 +7,10 @@ from pathlib import Path
 
 
 class CliTests(unittest.TestCase):
+    REFERENCE_AS_OF = "2026-09-04"
+    REFERENCE_UNIVERSE = "phase2_reference_universe.csv"
+    REFERENCE_MARKET = "phase2_reference_market.csv"
+
     def run_cli(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         environment = dict(os.environ)
         environment["PYTHONPATH"] = str(Path(__file__).parent.parent / "src")
@@ -99,14 +103,15 @@ class CliTests(unittest.TestCase):
             database = str(Path(directory) / "phase2.sqlite")
             refresh = self.run_cli(
                 "phase2-refresh-fixtures", "--db", database,
-                "--universe-csv", str(root / "fixtures" / "phase2_universe.csv"),
-                "--market-csv", str(root / "fixtures" / "phase2_market.csv"),
-                "--as-of", "2026-09-01", "--request-id", "cli-phase2-a",
+                "--universe-csv", str(root / "fixtures" / self.REFERENCE_UNIVERSE),
+                "--market-csv", str(root / "fixtures" / self.REFERENCE_MARKET),
+                "--as-of", self.REFERENCE_AS_OF, "--request-id", "cli-phase2-a",
             )
             self.assertEqual(refresh.returncode, 0, refresh.stderr)
-            self.assertIn('"accepted_market_observations": 5', refresh.stdout)
+            self.assertIn('"accepted_universe_members": 2', refresh.stdout)
+            self.assertIn('"accepted_market_observations": 40', refresh.stdout)
             evidence = self.run_cli(
-                "phase2-evidence", "--db", database, "--as-of", "2026-09-01",
+                "phase2-evidence", "--db", database, "--as-of", self.REFERENCE_AS_OF,
             )
 
         self.assertEqual(evidence.returncode, 0, evidence.stderr)
@@ -128,10 +133,10 @@ class CliTests(unittest.TestCase):
             bad_sec.write_text("not-json", encoding="utf-8")
             result = self.run_cli(
                 "phase2-refresh-fixtures", "--db", database,
-                "--universe-csv", str(root / "fixtures" / "phase2_universe.csv"),
-                "--market-csv", str(root / "fixtures" / "phase2_market.csv"),
-                "--sec-json", str(bad_sec), "--sec-ticker", "ABC", "--sec-cik", "0000000001",
-                "--as-of", "2026-09-01", "--request-id", "cli-phase2-failed",
+                "--universe-csv", str(root / "fixtures" / self.REFERENCE_UNIVERSE),
+                "--market-csv", str(root / "fixtures" / self.REFERENCE_MARKET),
+                "--sec-json", str(bad_sec), "--sec-ticker", "AAPL", "--sec-cik", "0000320193",
+                "--as-of", self.REFERENCE_AS_OF, "--request-id", "cli-phase2-failed",
             )
         self.assertEqual(result.returncode, 2)
         self.assertIn('"status": "failed"', result.stdout)
@@ -147,11 +152,11 @@ class CliTests(unittest.TestCase):
                 "issuer_name", "exchange", "source_url", "source_version", "retrieved_at",
                 "lookahead_bias_status", "survivorship_bias_status",
             )) + "\n", encoding="utf-8")
-            market.write_text((root / "fixtures" / "phase2_market.csv").read_text(encoding="utf-8"), encoding="utf-8")
+            market.write_text((root / "fixtures" / self.REFERENCE_MARKET).read_text(encoding="utf-8"), encoding="utf-8")
             result = self.run_cli(
                 "phase2-refresh-fixtures", "--db", str(database),
                 "--universe-csv", str(universe), "--market-csv", str(market),
-                "--as-of", "2026-09-01", "--request-id", "cli-zero-active",
+                "--as-of", self.REFERENCE_AS_OF, "--request-id", "cli-zero-active",
             )
 
         self.assertEqual(result.returncode, 2)
@@ -165,8 +170,8 @@ class CliTests(unittest.TestCase):
             config.write_text('{"market":{"enabled":false},"sec":{"enabled":false},"rss":{"enabled":false}}', encoding="utf-8")
             result = self.run_cli(
                 "phase2-refresh-config", "--db", database, "--config", str(config),
-                "--universe-csv", str(root / "fixtures" / "phase2_universe.csv"),
-                "--as-of", "2026-09-01", "--request-id", "cli-no-provider",
+                "--universe-csv", str(root / "fixtures" / self.REFERENCE_UNIVERSE),
+                "--as-of", self.REFERENCE_AS_OF, "--request-id", "cli-no-provider",
             )
         self.assertEqual(result.returncode, 2)
         self.assertIn('"status": "failed"', result.stdout)

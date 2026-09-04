@@ -1,0 +1,3 @@
+universe_id,effective_date,membership_status,ticker,cik,issuer_name,exchange,source_url,source_version,retrieved_at,lookahead_bias_status,survivorship_bias_status
+sp500-reference-subset-2026-09-04,2026-09-04,active,AAPL,0000320193,Apple Inc.,NASDAQ,https://www.spglobal.com/spdji/en/indices/equity/sp-500/,sp500-reference-subset-2026-09-04,2026-09-04T00:00:00+00:00,current_snapshot_only,survivorship_risk_disclosed
+sp500-reference-subset-2026-09-04,2026-09-04,active,MSFT,0000789019,Microsoft Corporation,NASDAQ,https://www.spglobal.com/spdji/en/indices/equity/sp-500/,sp500-reference-subset-2026-09-04,2026-09-04T00:00:00+00:00,current_snapshot_only,survivorship_risk_disclosed

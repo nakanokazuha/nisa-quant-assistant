@@ -1,0 +1,18 @@
+{
+  "fixture_kind": "official_sec_reference",
+  "target": {"ticker": "MSFT", "cik": "0000789019"},
+  "source_url": "https://data.sec.gov/submissions/CIK0000789019.json",
+  "source_accession": "0000789019-26-000141",
+  "retrieved_at": "2026-09-04T00:00:00+00:00",
+  "payload": {
+    "filings": {
+      "recent": {
+        "accessionNumber": ["0000789019-26-000141"],
+        "filingDate": ["2026-08-05"],
+        "reportDate": ["2026-08-04"],
+        "form": ["4"],
+        "primaryDocument": ["form4.html"]
+      }
+    }
+  }
+}

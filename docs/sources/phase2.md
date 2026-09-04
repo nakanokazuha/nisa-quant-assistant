@@ -18,8 +18,11 @@ historical truth. `phase2_universe_members` requires a supplied CSV row with a
 `universe_id`, `effective_date`, source URL/version, UTC-normalized retrieval
 time, `lookahead_bias_status`, and `survivorship_bias_status`. `point_in_time`
 and `current_snapshot_only` are distinct labels. A current-only snapshot is
-never presented as historical membership. The checked-in universe fixture is a
-synthetic subset for tests, not a claim that it is the complete S&P 500.
+never presented as historical membership. The checked-in
+`phase2_reference_universe.csv` contains only AAPL and MSFT as a clearly labeled
+reference subset with `current_snapshot_only` and disclosed survivorship risk;
+it is not complete S&P 500 membership or historically exhaustive membership.
+Its fixture-level provenance is recorded in [`fixtures.md`](fixtures.md).
 
 ## Market observations
 
@@ -32,7 +35,12 @@ The adapter is implemented but configuration-required. The key is supplied by
 the caller, is not written to SQLite/logs/citations, and full-history access
 may require a paid plan according to the provider documentation. The default
 test path injects local observations through the same provider-neutral
-interface. Market rows are daily OHLCV only; no real-time claim is made.
+interface. Market rows are daily OHLCV only; no real-time claim is made. The
+checked-in `phase2_reference_market.csv` is a small unofficial Yahoo Finance
+chart reference slice for AAPL and MSFT from 2024-01-02 through 2024-01-05. It
+is fixture data, not official or licensed market data, and is not used to
+change the configured Alpha Vantage production adapter. The endpoint and
+fallback limitations are documented in [`fixtures.md`](fixtures.md).
 
 ## SEC EDGAR filings and facts
 
@@ -73,6 +81,15 @@ remains attributable only through the explicit mapping of requested CIK,
 taxonomy/fact, unit, period, and retrieval metadata, and its source identifier
 is a deterministic fact/period identity rather than a fabricated accession.
 
+The checked-in SEC files are tiny official `data.sec.gov` reference extracts
+for AAPL and MSFT. They preserve source URLs, target CIKs, accession/filing
+dates where supplied, and fixture retrieval metadata; they are not full EDGAR
+dumps. The MSFT Company Facts extract records its official source accession in
+the wrapper metadata while omitting the raw `accn` field from the selected
+payload because the existing fail-closed normalizer rejects that accession's
+non-issuer prefix. This is an explicit extraction boundary, not an invented
+issuer identity. See [`fixtures.md`](fixtures.md).
+
 ## News/RSS
 
 The SEC developer FAQ confirms RSS feeds for some EDGAR searches. The generic
@@ -82,7 +99,9 @@ aliases, and either `metadata_only` or `bounded_excerpt` content policy. The
 adapter stores at most a bounded title/summary excerpt and never bypasses a
 paywall or assumes a license. Unmapped or multiple ticker matches become an
 audit failure. Article identity uses the feed GUID/link, so replays do not
-duplicate articles.
+duplicate articles. The checked-in `phase2_synthetic_news.xml` is intentionally
+synthetic local parser content on `example.test`; it is not a public historical
+news claim or a live RSS fixture. Configured RSS remains the automatic path.
 
 ## Watch-alert evidence
 
@@ -122,7 +141,12 @@ usable data.
 
 Copy `config/phase2-sources.example.json` to a private local configuration if
 needed. Keep API keys and private/licensed URLs outside the repository. The
-fixture commands require no secrets and are the reproducible acceptance path.
+`phase2-refresh-fixtures` commands and the checked-in files in
+`tests/fixtures/phase2_reference_*` are the reproducible offline acceptance
+path. `phase2-refresh-config` is the configured automatic API/RSS path and may
+access the network only when explicitly run with caller-supplied settings. The
+legacy `import-csv` command is an optional manual broker CSV path; it is kept
+separate from both Phase 2 fixture and automatic-provider retrieval.
 The configured command is read-only and usable with an injected transport in
 tests; its live network proof remains configuration- and environment-dependent.
 The live capability is therefore configuration-dependent, not fixture-proven.

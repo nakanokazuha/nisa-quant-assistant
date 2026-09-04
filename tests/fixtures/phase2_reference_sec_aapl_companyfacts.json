@@ -1,0 +1,30 @@
+{
+  "fixture_kind": "official_sec_reference",
+  "target": {"ticker": "AAPL", "cik": "0000320193"},
+  "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
+  "retrieved_at": "2026-09-04T00:00:00+00:00",
+  "payload": {
+    "cik": 320193,
+    "entityName": "Apple Inc.",
+    "facts": {
+      "us-gaap": {
+        "RevenueFromContractWithCustomerExcludingAssessedTax": {
+          "units": {
+            "USD": [
+              {
+                "start": "2022-09-25",
+                "end": "2023-09-30",
+                "val": 383285000000,
+                "accn": "0000320193-23-000106",
+                "form": "10-K",
+                "filed": "2023-11-03",
+                "fy": 2023,
+                "fp": "FY"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

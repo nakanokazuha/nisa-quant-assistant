@@ -1,0 +1,30 @@
+{
+  "fixture_kind": "official_sec_reference",
+  "target": {"ticker": "MSFT", "cik": "0000789019"},
+  "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+  "source_accession": "0000950170-23-035122",
+  "retrieved_at": "2026-09-04T00:00:00+00:00",
+  "payload": {
+    "cik": 789019,
+    "entityName": "Microsoft Corporation",
+    "facts": {
+      "us-gaap": {
+        "RevenueFromContractWithCustomerExcludingAssessedTax": {
+          "units": {
+            "USD": [
+              {
+                "start": "2022-07-01",
+                "end": "2023-06-30",
+                "val": 211915000000,
+                "form": "10-K",
+                "filed": "2023-07-27",
+                "fy": 2023,
+                "fp": "FY"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
