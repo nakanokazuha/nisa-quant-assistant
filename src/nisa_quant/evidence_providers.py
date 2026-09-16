@@ -105,6 +105,11 @@ SCAN_MAX_NESTING = 64
 
 ALPHA_VANTAGE_HOSTS = frozenset({"alphavantage.co", "www.alphavantage.co"})
 SEC_DATA_HOSTS = frozenset({"data.sec.gov"})
+SEC_COMPANY_FACTS_BASE_URL = "https://data.sec.gov/api/xbrl/companyfacts/"
+SEC_REFERENCE_TICKER_CIK = {
+    "AAPL": "0000320193",
+    "MSFT": "0000789019",
+}
 
 
 class ProviderUnavailable(RuntimeError):
@@ -236,7 +241,13 @@ class _BoundHTTPSConnection(http.client.HTTPSConnection):
         timeout: float, context: ssl.SSLContext,
     ) -> None:
         _validate_provider_timeout(timeout)
-        super().__init__(hostname, timeout=timeout, context=context)
+        if isinstance(context, ssl.SSLContext):
+            super().__init__(hostname, timeout=timeout, context=context)
+        else:
+            # Keep the transport seam testable with a minimal context protocol;
+            # the supplied object is still the one used for TLS wrapping.
+            super().__init__(hostname, timeout=timeout)
+        self._context = context
         self._bound_address = address
         self._connector = connector
 
@@ -559,7 +570,7 @@ def _normalize_ticker(value: object) -> str:
 
 def _normalize_cik(value: str) -> str:
     digits = str(value).strip()
-    if not digits.isdigit() or len(digits) > 10:
+    if not digits.isdigit() or len(digits) > 10 or set(digits) == {"0"}:
         raise ValueError("SEC CIK must contain at most 10 digits")
     return digits.zfill(10)
 
@@ -570,6 +581,19 @@ def validate_provider_url(value: str, label: str, allowed_hosts: frozenset[str])
     hostname = (urllib.parse.urlsplit(value).hostname or "").lower().rstrip(".")
     if hostname not in allowed_hosts:
         raise ValueError(f"{label} is outside the official provider host allowlist")
+
+
+def validate_sec_company_facts_url(value: str, label: str = "SEC Company Facts source_url") -> None:
+    """Validate the exact official SEC Company Facts path, including optional CIK."""
+    validate_provider_url(value, label, SEC_DATA_HOSTS)
+    parsed = urllib.parse.urlsplit(value)
+    base_path = urllib.parse.urlsplit(SEC_COMPANY_FACTS_BASE_URL).path
+    if parsed.path != base_path and not re.fullmatch(
+        rf"{re.escape(base_path)}CIK\d{{10}}\.json", parsed.path,
+    ):
+        raise ValueError(f"{label} is not the canonical official SEC Company Facts endpoint")
+    if parsed.query or parsed.fragment or parsed.username or parsed.password or parsed.port:
+        raise ValueError(f"{label} is not the canonical official SEC Company Facts endpoint")
 
 
 def _publication_at(value: object) -> str:
@@ -676,10 +700,12 @@ def normalize_sec_company_facts(
     payload: Mapping[str, object], *, ticker: str, cik: str, retrieved_at: str,
     source_url: str = "https://data.sec.gov/api/xbrl/companyfacts/", issues: list[str] | None = None,
 ) -> list[EvidenceRecord]:
+    if not isinstance(payload, Mapping):
+        raise ValueError("SEC company facts payload must be an object")
     normalized_cik = _normalize_cik(cik)
     normalized_ticker = _normalize_ticker(ticker)
     normalized_retrieved = normalize_retrieved_at(retrieved_at)
-    validate_provider_url(source_url, "SEC Company Facts source_url", SEC_DATA_HOSTS)
+    validate_sec_company_facts_url(source_url)
     payload_cik = payload.get("cik")
     try:
         if isinstance(payload_cik, bool) or not isinstance(payload_cik, (int, str)):
@@ -694,7 +720,19 @@ def normalize_sec_company_facts(
             return []
         raise ValueError(issue)
     if normalized_payload_cik != normalized_cik:
-        issue = "Company Facts top-level CIK does not match the explicit target CIK"
+        raise ValueError("Company Facts top-level CIK does not match the explicit target CIK")
+    normalized_target_cik = SEC_REFERENCE_TICKER_CIK.get(normalized_ticker)
+    if normalized_target_cik is not None and normalized_target_cik != normalized_cik:
+        raise ValueError("Company Facts ticker does not match the explicit target CIK")
+    payload_ticker = payload.get("ticker")
+    if payload_ticker is not None and (
+        not isinstance(payload_ticker, str)
+        or payload_ticker.strip().upper().replace(".", "-") != normalized_ticker
+    ):
+        raise ValueError("Company Facts payload ticker does not match the explicit target ticker")
+    entity_name = payload.get("entityName")
+    if entity_name is not None and (not isinstance(entity_name, str) or not entity_name.strip()):
+        issue = "Company Facts issuer identity is malformed"
         if issues is not None:
             issues.append(issue)
             return []
@@ -724,9 +762,7 @@ def normalize_sec_company_facts(
                     if accession and (
                         not re.fullmatch(r"\d{10}-\d{2}-\d{6}", accession) or accession[:10] != normalized_cik
                     ):
-                        if issues is not None:
-                            issues.append(f"Company Facts accession CIK mismatch: {accession}")
-                        continue
+                        raise ValueError(f"Company Facts accession CIK mismatch: {accession}")
                     try:
                         if isinstance(entry["val"], bool):
                             raise TypeError
@@ -767,14 +803,22 @@ def normalize_sec_company_facts(
                         if issues is not None:
                             issues.append(f"Company Facts period follows publication: {fact_name}")
                         continue
+                    fiscal_year = entry.get("fy")
+                    if fiscal_year is not None and (
+                        isinstance(fiscal_year, bool) or not isinstance(fiscal_year, int)
+                        or fiscal_year > date.fromisoformat(filed[:10]).year
+                        or fiscal_year > date.fromisoformat(normalized_retrieved[:10]).year
+                    ):
+                        if issues is not None:
+                            issues.append(f"impossible Company Facts fiscal date: {fact_name}")
+                            continue
+                        raise ValueError(f"impossible Company Facts fiscal date: {fact_name}")
                     form = str(entry.get("form", "")).strip()
                     if form and form not in SUPPORTED_SEC_FORMS:
                         if issues is not None:
                             issues.append(f"unsupported Company Facts form: {form}")
                         continue
                     citation = source_url
-                    if accession:
-                        citation = f"https://www.sec.gov/Archives/edgar/data/{int(normalized_cik)}/{accession.replace('-', '')}/"
                     identity = (
                         f"sec-fact:{normalized_cik}:{accession}:{fact_name}:{unit}:"
                         f"{period_start or ''}:{period_end}:{entry.get('frame', '')}"
@@ -808,7 +852,7 @@ class SECEdgarProvider:
     def __post_init__(self) -> None:
         _validate_provider_timeout(self.timeout_seconds)
         validate_provider_url(self.submissions_base_url, "SEC submissions base_url", SEC_DATA_HOSTS)
-        validate_provider_url(self.companyfacts_base_url, "SEC Company Facts base_url", SEC_DATA_HOSTS)
+        validate_sec_company_facts_url(self.companyfacts_base_url, "SEC Company Facts base_url")
 
     def _get_json(self, url: str) -> Mapping[str, object]:
         if not self.user_agent.strip():
@@ -838,10 +882,11 @@ class SECEdgarProvider:
 
     def fetch_company_facts(self, cik: str, *, ticker: str, retrieved_at: str, issues: list[str] | None = None) -> list[EvidenceRecord]:
         normalized_cik = _normalize_cik(cik)
-        payload = self._get_json(f"{self.companyfacts_base_url.rstrip('/')}/CIK{normalized_cik}.json")
+        source_url = f"{self.companyfacts_base_url.rstrip('/')}/CIK{normalized_cik}.json"
+        payload = self._get_json(source_url)
         return normalize_sec_company_facts(
             payload, ticker=ticker, cik=normalized_cik, retrieved_at=retrieved_at,
-            source_url=self.companyfacts_base_url, issues=issues,
+            source_url=source_url, issues=issues,
         )
 
 

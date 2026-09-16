@@ -8,6 +8,14 @@ The historical Japan-first plan below is reference material superseded by the ac
 
 Historical research / deferred — not active implementation instructions: the legacy sections below preserve the prior local release context.
 
+## Phase 3 status — implemented read-only MVP
+
+The standalone Phase 3 MVP is implemented in `src/nisa_quant/historical_market_data.py`, `feature_engineering.py`, `return_targets.py`, `training_dataset.py`, `ranking_model.py`, `walk_forward_evaluation.py`, `scenario_analysis.py`, and `phase3_reporting.py`. It is exercised with offline fixtures and can optionally retrieve public Yahoo chart data into ignored local cache. The specialized model is the dependency-free ridge ranking baseline documented in `docs/phase3-model.md`; a foundation model, historical S&P membership, and all trading/broker write paths remain deferred/prohibited.
+
+Use the Phase 3 Python APIs for history retrieval, snapshot replay, panel construction, model fitting, and report rendering. The exposed CLI commands are `phase3-backtest --dataset DATASET --output OUTPUT` and `phase3-refresh`; refresh is replay-only by default, with explicit `--live` and `--limit N` reserved for live smoke testing. See `docs/phase3-operations.md` for the full workflow.
+
+Phase 3 release status/exit contract: `available` and `available_descriptive` mean a usable report and exit 0; `unavailable_insufficient_data` means the pipeline completed but cannot support the requested data/performance scope and exits 2; `unavailable` means the requested cache/provider/artifact was unavailable and exits 2. A live run without `--limit` is scoped `full_current_sp500`; a run with `--limit` is scoped `limited_live_smoke` and must not claim full-universe coverage. Replay filters content-addressed history artifacts by the complete canonical request contract and exact requested start/end range, ignores unrelated snapshots, and requires exactly one compatible match; zero or multiple matches are structured unavailable.
+
 # NISA Quant Assistant Implementation Plan
 
 > **Historical planning note:** This document records a proposed Hermes/Yume investment workflow. It is not an active routing instruction; no Hermes runtime, orchestrator, or model-provider routing is implemented in the current release.

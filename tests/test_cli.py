@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import sys
 import tempfile
@@ -28,6 +29,27 @@ class CliTests(unittest.TestCase):
         self.assertIn("import-csv", result.stdout)
         self.assertIn("report", result.stdout)
         self.assertIn("watchlist-add", result.stdout)
+
+    def test_phase3_refresh_invalid_range_is_structured_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "phase3-report.json"
+            result = self.run_cli(
+                "phase3-refresh", "--as-of", "2026-09-16",
+                "--start", "2026-02-01", "--end", "2026-01-01",
+                "--cache-dir", str(root / "cache"), "--output", str(output),
+                "--replay-only",
+            )
+            report = json.loads(output.read_text(encoding="utf-8"))
+            manifest = json.loads((root / "phase3-report.json.manifest.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertEqual(report["status"], "unavailable")
+        self.assertIn("range", report["reason"])
+        self.assertEqual(manifest["report_status"], "unavailable")
+        self.assertEqual(manifest["requested_start"], "2026-02-01")
+        self.assertEqual(manifest["requested_end"], "2026-01-01")
 
     def test_record_recommendation_reports_empty_candidates_as_a_clear_cli_error(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

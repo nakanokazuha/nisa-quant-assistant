@@ -259,6 +259,8 @@ def _mask_structural_labels(report: str) -> str:
 def _validate_report_safety(report: str) -> None:
     """Reject action instructions, secrets, account identifiers, and PII filenames."""
     normalized = _normalize_security_text(_normalize_identifier_tokens(_normalize_safety_text(report)))
+    if re.search(r"\b(?:BUY|SELL)\s+(?!CANDIDATE\b)[A-Z][A-Z0-9.\^=-]{0,9}\b|\bPLACE\s+ORDER\s+FOR\s+[A-Z][A-Z0-9.\^=-]{0,9}\b", normalized, re.IGNORECASE):
+        raise ValueError("report contains an executable action phrase")
     normalized = _mask_safe_filenames(normalized)
     normalized = re.sub(r"[ \t]+", " ", normalized)
     normalized = re.sub(r"[ \t]*/[ \t]*", "/", normalized)
@@ -362,6 +364,10 @@ def _validate_report_safety(report: str) -> None:
             )
             if not (canonical_table_label or canonical_heading_label):
                 raise ValueError("report contains unsupported action-like recommendation prose")
+
+def validate_report_safety(report: str) -> None:
+    """Public safety-only scanner used by Phase 3 reports."""
+    _validate_report_safety(report)
 
 
 def _structured_texts(value: Any, *, allow_renderer_labels: bool = False) -> Iterable[str]:

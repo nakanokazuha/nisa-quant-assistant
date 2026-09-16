@@ -1,5 +1,37 @@
 # NISA Quant Assistant — Phase 2 evidence slice
 
+## Implemented Phase 3 usable MVP
+
+Phase 3 now adds an opt-in public read-only historical chart retrieval path with local cache/replay, point-in-time monthly feature/target construction, a deterministic supervised ranking baseline, locked walk-forward evaluation, uncertainty heuristics, and bound Markdown/JSON reports. The model predicts/ranks the 3-month excess target, while the monthly backtest compounds non-overlapping 1-month realized price returns and charges costs on monthly turnover. See [`phase3-model.md`](phase3-model.md), [`phase3-data.md`](phase3-data.md), and [`phase3-operations.md`](phase3-operations.md).
+
+Phase 3 current `model_score` values are model output for descriptive research ranking only: not a recommendation, not a calibrated probability, and not evidence of future outperformance. Current-only rows are survivorship-limited; their ranking remains visible while historical performance claims are suppressed. If their serialized backtest has no eligible periods, the report is `unavailable_insufficient_data` with exit 2 while predictions remain available.
+
+Phase 3 CLI status and exit contract is stable: `available` and `available_descriptive` are successful reports and exit 0; `unavailable_insufficient_data` and `unavailable` are structured unavailable reports and exit 2. `phase3-refresh` is exposed, replay-only by default, and filters content-addressed history caches by their complete canonical request contract and exact requested range. Unrelated snapshots are ignored; zero or multiple compatible matches are unavailable. `--limit N` is only a live smoke exception and is reported as `limited_live_smoke`, never as `full_current_sp500`.
+
+Bound Phase 3 reports preserve `unavailable_insufficient_data` from validated backtest metrics and never relabel it as available. Optional SEC feature imputation does not apply to missing market history: members with no usable observations remain visible in manifest coverage/failure records but are absent from the training panel and current prediction ranking.
+
+The live Phase 3 producer retrieves the current S&P 500 constituent table from the public Wikipedia page and records its retrieval provenance. It is explicitly current-only and survivorship-biased, not historical S&P membership; alpha/excess/benchmark-relative claims are suppressed without point-in-time membership evidence. SEC Company Facts are optional and partial unless each ticker is separately fetched and bound. A pretrained foundation model and any broker/trading path remain deferred or prohibited.
+
+The supported Phase 3 command reads an existing local dataset and does not fetch live data:
+
+```bash
+PYTHONPATH=src python3 -m nisa_quant phase3-backtest \
+  --dataset data/phase3/dataset.json \
+  --output reports/phase3/backtest.json
+```
+
+The responsibility-level producer is replay-only by default and network-enabled only with explicit `--live`:
+
+```bash
+PYTHONPATH=src python3 -m nisa_quant phase3-refresh \
+  --as-of 2026-09-16 --start 2024-01-01 --end 2026-09-16 \
+  --cache-dir data/phase3 --output reports/phase3/report.json --replay-only
+PYTHONPATH=src python3 -m nisa_quant phase3-refresh \
+  --as-of 2026-09-16 --start 2024-01-01 --end 2026-09-16 \
+  --cache-dir data/phase3 --output reports/phase3/report.json \
+  --live --sec-contact researcher@example.com
+```
+
 This standalone Python package is a local-first, read-only evidence tool for US-listed S&P 500 constituent equities. Phase 2 accepts an explicit point-in-time universe, daily OHLCV observations, SEC filing/fact metadata, and configured RSS evidence; it stores normalized records in SQLite and emits evidence/context snapshots without predictions, directional verdicts, or trade actions.
 
 The existing local broker CSV, Japan fixture, deterministic metric, screen, report, and journal commands remain available for compatibility. They are not called by the Phase 2 refresh path. No broker login/write access, order endpoint, dispatch path, scheduled delivery, mobile app, Hermes integration, or profitability claim exists.
@@ -38,7 +70,7 @@ mapped RSS adapter. Missing keys, SEC User-Agent text, or RSS terms/aliases
 are reported as configuration-required failures; no secret is persisted or
 printed.
 
-Deferred: live S&P constituent downloads, paid/licensed news, options or short-interest vendors, issuer scraping, broker data, scheduling, synthesis, predictions, recommendations, and trading.
+Deferred/unavailable: SEC submissions/news beyond the tested Company Facts path, paid/licensed news, options or short-interest vendors, issuer scraping, broker data, scheduling, LLM synthesis, and trading. The Phase 3 prediction path is deterministic and read-only; it does not claim historical alpha from current-survivor data.
 
 ## Local commands
 

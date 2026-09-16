@@ -1,0 +1,9 @@
+{
+  "schema": "phase3-offline-producer-fixture",
+  "schema_version": 1,
+  "provider": "synthetic offline fixture",
+  "market_source_ids": ["fixture-market:AAA", "fixture-market:BBB", "fixture-market:^GSPC"],
+  "sec_source_ids": ["fixture-sec:AAA:revenues"],
+  "citation": "tests/fixtures/phase3_offline_producer.json",
+  "limitation": "Synthetic data only; no live-market or historical-membership claim."
+}

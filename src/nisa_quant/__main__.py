@@ -17,6 +17,16 @@ from .database_schema import connect_database, initialize_database
 from .candidate_screening import run_screens
 from .source_records import import_distribution_fixture, import_price_fixture
 from .watchlist import add_watchlist_item
+from .training_dataset import load_training_dataset
+from .walk_forward_evaluation import _validate_transaction_cost_bps, save_backtest, walk_forward_backtest
+from .phase3_producer import refresh_phase3
+
+
+def _transaction_cost_argument(value: str) -> float:
+    try:
+        return _validate_transaction_cost_bps(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
 def _database(path: str):
@@ -127,6 +137,28 @@ def build_parser() -> argparse.ArgumentParser:
     phase2_evidence.add_argument("--as-of", required=True)
     phase2_evidence.add_argument("--output")
     phase2_evidence.add_argument("--scope-id")
+
+    phase3_backtest = subparsers.add_parser(
+        "phase3-backtest", help="run a deterministic Phase 3 backtest from a local dataset",
+    )
+    phase3_backtest.add_argument("--dataset", required=True)
+    phase3_backtest.add_argument("--output", required=True)
+    phase3_backtest.add_argument("--validation-date", action="append")
+    phase3_backtest.add_argument("--transaction-cost-bps", type=_transaction_cost_argument, default=10.0)
+
+    phase3_refresh = subparsers.add_parser(
+        "phase3-refresh", help="produce a bound Phase 3 report from replayed cache or explicit live public sources",
+    )
+    phase3_refresh.add_argument("--as-of", required=True)
+    phase3_refresh.add_argument("--start", required=True)
+    phase3_refresh.add_argument("--end", required=True)
+    phase3_refresh.add_argument("--cache-dir", required=True)
+    phase3_refresh.add_argument("--output", required=True)
+    phase3_refresh.add_argument("--live", action="store_true", help="explicitly permit public read-only network retrieval")
+    phase3_refresh.add_argument("--replay-only", action="store_true", help="use local cache only (the default)")
+    phase3_refresh.add_argument("--limit", type=int, help="explicit small live subset for smoke testing; omit for full current universe")
+    phase3_refresh.add_argument("--sec-contact", help="local non-secret SEC caller contact string")
+    phase3_refresh.add_argument("--request-contract", help="canonical full history request contract for exact replay binding")
     return parser
 
 
@@ -137,6 +169,23 @@ def main(argv: list[str] | None = None) -> int:
         connection.close()
         print(f"initialized {args.db}")
         return 0
+    if args.command == "phase3-backtest":
+        dataset = load_training_dataset(Path(args.dataset))
+        result = walk_forward_backtest(
+            dataset, validation_dates=args.validation_date,
+            transaction_cost_bps=args.transaction_cost_bps,
+        )
+        output = Path(args.output)
+        save_backtest(result, output)
+        print(f"wrote {output}")
+        return 0 if result.metrics.get("availability_status") in {"available", "available_descriptive"} else 2
+    if args.command == "phase3-refresh":
+        return refresh_phase3(
+            as_of=args.as_of, start=args.start, end=args.end,
+            cache_dir=Path(args.cache_dir), output=Path(args.output),
+            live=args.live, replay_only=args.replay_only or not args.live, limit=args.limit,
+            sec_contact=args.sec_contact, replay_request_contract=args.request_contract,
+        )
     connection = _database(args.db)
     try:
         if args.command == "import-csv":

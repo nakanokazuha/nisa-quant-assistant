@@ -16,6 +16,12 @@ Historical research / deferred — not active implementation instructions: the l
 **Implementation:** Phase 2 fixture refresh, configured read-only provider wiring, SQLite evidence persistence, and evidence-only CLI output are locally implemented and fixture/injected-transport verified; live retrieval remains configuration-dependent and no Hermes/Codex runtime routing is active.
 **Date:** 2026-08-24 (Asia/Tokyo)
 
+## Phase 3 implementation amendment
+
+The Phase 3 usable MVP is implemented as a standalone read-only workflow: public Yahoo chart reference retrieval with cache/replay, optional official SEC Company Facts evidence, point-in-time monthly panels, deterministic factor and supervised diagonal ridge-like ranking, 1-month/3-month/6-month forward targets, monthly walk-forward evaluation, residual-based uncertainty heuristics, and deterministic reports. The 3-month excess target is used for model training and prediction ranking; no rank-IC metric is calculated. Monthly portfolio realization and benchmark compounding use non-overlapping 1-month forward price returns with costs applied to monthly turnover. It does not use an LLM for numeric prediction. Reports disclose current-universe/survivorship limitations, partial SEC coverage, and manual-review/no-order boundaries.
+
+Deferred Phase 3 items are a pretrained time-series foundation model, automatic historical constituent membership, paid/licensed providers, scheduling/delivery, and any broker login/write/order execution. The checked-in Phase 2 fixtures remain test controls only and are not used as training data.
+
 ---
 
 ## Legacy release boundary (superseded for Phase 2)

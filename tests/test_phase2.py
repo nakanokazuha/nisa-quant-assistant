@@ -1022,7 +1022,7 @@ class Phase2ReviewRegressionTests(unittest.TestCase):
                 connection.commit()
 
     def test_company_facts_requires_valid_top_level_cik_before_attribution(self) -> None:
-        for payload in ({"facts": {}}, {"cik": "not-a-cik", "facts": {}}, {"cik": "0000000002", "facts": {}}):
+        for payload in ({"facts": {}}, {"cik": "not-a-cik", "facts": {}}):
             with self.subTest(payload=payload):
                 issues: list[str] = []
                 self.assertEqual(
@@ -1461,14 +1461,17 @@ class Phase2ReviewRegressionTests(unittest.TestCase):
 
     def test_company_facts_reject_wrong_accession_and_ordered_periods_with_recency(self) -> None:
         issues: list[str] = []
+        with self.assertRaisesRegex(ValueError, "CIK mismatch"):
+            normalize_sec_company_facts({"cik": "0000000001", "facts": {"us-gaap": {"Revenue": {"units": {"USD": [
+                {"end": "2026-06-30", "start": "2026-07-01", "val": 123, "accn": "0000000002-26-000002", "form": "10-Q", "filed": "2026-08-01"},
+            ]}}}}}, ticker="ABC", cik="0000000001", retrieved_at="2026-09-01T00:00:00+00:00", issues=issues)
         records = normalize_sec_company_facts({"cik": "0000000001", "facts": {"us-gaap": {"Revenue": {"units": {"USD": [
-            {"end": "2026-06-30", "start": "2026-07-01", "val": 123, "accn": "0000000002-26-000002", "form": "10-Q", "filed": "2026-08-01"},
-            {"end": "2026-06-30", "start": "2026-04-01", "val": 124, "accn": "0000000001-26-000003", "form": "10-Q", "filed": "2026-08-01"},
-            {"end": "2026-06-30", "start": "2026-07-01", "val": 125, "accn": "0000000001-26-000004", "form": "10-Q", "filed": "2026-08-01"},
-        ]}}}}}, ticker="ABC", cik="0000000001", retrieved_at="2026-09-01T00:00:00+00:00", issues=issues)
+                {"end": "2026-06-30", "start": "2026-07-01", "val": 123, "accn": "0000000001-26-000002", "form": "10-Q", "filed": "2026-08-01"},
+                {"end": "2026-06-30", "start": "2026-04-01", "val": 124, "accn": "0000000001-26-000003", "form": "10-Q", "filed": "2026-08-01"},
+                {"end": "2026-06-30", "start": "2026-07-01", "val": 125, "accn": "0000000001-26-000004", "form": "10-Q", "filed": "2026-08-01"},
+            ]}}}}}, ticker="ABC", cik="0000000001", retrieved_at="2026-09-01T00:00:00+00:00", issues=issues)
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0].recency_status, "old")
-        self.assertTrue(any("mismatch" in issue for issue in issues))
         self.assertTrue(any("starts after" in issue for issue in issues))
 
     def test_malformed_numeric_evidence_is_rejected(self) -> None:
@@ -1633,12 +1636,11 @@ class Phase2ReviewRegressionTests(unittest.TestCase):
 
     def test_company_facts_top_level_cik_mismatch_is_rejected_without_attribution(self) -> None:
         issues: list[str] = []
-        records = normalize_sec_company_facts(
-            {"cik": "0000000002", "facts": {}}, ticker="ABC", cik="0000000001",
-            retrieved_at="2026-09-01T00:00:00+00:00", issues=issues,
-        )
-        self.assertEqual(records, [])
-        self.assertTrue(any("top-level" in issue.lower() and "cik" in issue.lower() for issue in issues))
+        with self.assertRaisesRegex(ValueError, "top-level CIK"):
+            normalize_sec_company_facts(
+                {"cik": "0000000002", "facts": {}}, ticker="ABC", cik="0000000001",
+                retrieved_at="2026-09-01T00:00:00+00:00", issues=issues,
+            )
 
     def test_company_facts_absent_accession_keeps_explicit_identity_without_invention(self) -> None:
         records = normalize_sec_company_facts(
