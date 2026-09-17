@@ -30,7 +30,7 @@ class CliTests(unittest.TestCase):
         self.assertIn("report", result.stdout)
         self.assertIn("watchlist-add", result.stdout)
 
-    def test_phase3_refresh_invalid_range_is_structured_unavailable(self) -> None:
+    def test_refresh_invalid_range_is_structured_unavailable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output = root / "phase3-report.json"

@@ -16,7 +16,7 @@ from nisa_quant.historical_market_data import (
     build_sec_request_contract,
     parse_sec_company_facts,
 )
-from nisa_quant.phase3_producer import refresh_phase3
+from nisa_quant.refresh_pipeline import refresh_phase3
 
 
 def _market_snapshot() -> object:
@@ -67,13 +67,13 @@ class SolR154OptionalSecTests(unittest.TestCase):
             root = Path(directory)
             output = root / "report.json"
             with patch(
-                "nisa_quant.phase3_producer.fetch_current_sp500_universe",
+                "nisa_quant.refresh_pipeline.fetch_current_sp500_universe",
                 return_value=[_market_snapshot().universe[0]],
             ), patch(
-                "nisa_quant.phase3_producer.fetch_sec_company_facts_for_ticker",
+                "nisa_quant.refresh_pipeline.fetch_sec_company_facts_for_ticker",
                 side_effect=ProviderUnavailable("SEC outage"),
             ), patch(
-                "nisa_quant.phase3_producer.fetch_history_snapshot",
+                "nisa_quant.refresh_pipeline.fetch_history_snapshot",
                 return_value=_market_snapshot(),
             ):
                 status = refresh_phase3(

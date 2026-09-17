@@ -25,7 +25,7 @@ from .historical_market_data import (
     parse_retrieved_at,
     SEC_CACHE_MAX_AGE_DAYS,
 )
-from .phase3_reporting import render_phase3_report
+from .quant_report import render_phase3_report
 from .ranking_model import SpecializedRankingModel, current_prediction_freshness, rank_current_candidates
 from .report_rendering import validate_report_safety
 from .training_dataset import build_monthly_panel

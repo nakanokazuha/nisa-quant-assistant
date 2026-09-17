@@ -2,7 +2,7 @@
 
 The adapter intentionally owns no quant logic, network client, cache selector,
 or broker capability.  It validates a small request schema and delegates the
-actual refresh to :func:`nisa_quant.phase3_producer.refresh_phase3`.
+actual refresh to :func:`nisa_quant.refresh_pipeline.refresh_phase3`.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from nisa_quant.phase3_producer import refresh_phase3  # noqa: E402
+from nisa_quant.refresh_pipeline import refresh_phase3  # noqa: E402
 
 
 Mode = Literal["live", "replay"]

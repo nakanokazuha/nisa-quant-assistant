@@ -16,7 +16,7 @@ from nisa_quant.historical_market_data import (
     build_history_snapshot,
     load_history_snapshot,
 )
-from nisa_quant.phase3_producer import refresh_phase3
+from nisa_quant.refresh_pipeline import refresh_phase3
 
 
 def _contract(asset_tickers: list[str]) -> str:
@@ -138,9 +138,9 @@ class RefreshManifestR127Tests(unittest.TestCase):
     def test_markdown_manifest_preserves_insufficient_status_and_exit_two(self) -> None:
         snapshot, members = _short_snapshot(current_only=True)
         with tempfile.TemporaryDirectory() as directory, patch(
-            "nisa_quant.phase3_producer.fetch_current_sp500_universe", return_value=members,
+            "nisa_quant.refresh_pipeline.fetch_current_sp500_universe", return_value=members,
         ), patch(
-            "nisa_quant.phase3_producer.fetch_history_snapshot", return_value=snapshot,
+            "nisa_quant.refresh_pipeline.fetch_history_snapshot", return_value=snapshot,
         ):
             root = Path(directory)
             output = root / "report.md"
@@ -163,9 +163,9 @@ class RefreshManifestR127Tests(unittest.TestCase):
     def test_manifest_gaps_are_deterministic_and_keep_failures_and_panel_exclusions_separate(self) -> None:
         snapshot, members = _short_snapshot()
         with tempfile.TemporaryDirectory() as directory, patch(
-            "nisa_quant.phase3_producer.fetch_current_sp500_universe", return_value=members,
+            "nisa_quant.refresh_pipeline.fetch_current_sp500_universe", return_value=members,
         ), patch(
-            "nisa_quant.phase3_producer.fetch_history_snapshot", return_value=snapshot,
+            "nisa_quant.refresh_pipeline.fetch_history_snapshot", return_value=snapshot,
         ):
             root = Path(directory)
             output = root / "report.json"
@@ -198,9 +198,9 @@ class RefreshManifestR127Tests(unittest.TestCase):
             ticker_failures=snapshot.ticker_failures,
         )
         with tempfile.TemporaryDirectory() as directory, patch(
-            "nisa_quant.phase3_producer.fetch_current_sp500_universe", return_value=members,
+            "nisa_quant.refresh_pipeline.fetch_current_sp500_universe", return_value=members,
         ), patch(
-            "nisa_quant.phase3_producer.fetch_history_snapshot", return_value=blocked_snapshot,
+            "nisa_quant.refresh_pipeline.fetch_history_snapshot", return_value=blocked_snapshot,
         ):
             root = Path(directory)
             output = root / "report.json"

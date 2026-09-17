@@ -131,14 +131,14 @@ class SolR160SecIsolationTests(unittest.TestCase):
             observed_snapshots.append(history)
             raise ValueError("stop after panel boundary")
 
-        from nisa_quant.phase3_producer import refresh_phase3
+        from nisa_quant.refresh_pipeline import refresh_phase3
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output = root / "report.json"
-            with patch("nisa_quant.phase3_producer._find_compatible_history_cache_paths", return_value=[root / "cache.json"]), \
-                    patch("nisa_quant.phase3_producer.load_history_snapshot", return_value=snapshot), \
-                    patch("nisa_quant.phase3_producer.build_monthly_panel", side_effect=stop_before_feature_consumption):
+            with patch("nisa_quant.refresh_pipeline._find_compatible_history_cache_paths", return_value=[root / "cache.json"]), \
+                    patch("nisa_quant.refresh_pipeline.load_history_snapshot", return_value=snapshot), \
+                    patch("nisa_quant.refresh_pipeline.build_monthly_panel", side_effect=stop_before_feature_consumption):
                 refresh_phase3(
                     as_of="2026-09-16", start="2024-01-01", end="2026-09-16",
                     cache_dir=root / "cache", output=output, replay_only=True,
@@ -174,20 +174,20 @@ class SolR160SecIdentityTests(unittest.TestCase):
             )
 
     def test_producer_records_identity_failure_as_failed_not_unavailable(self) -> None:
-        from nisa_quant.phase3_producer import refresh_phase3
+        from nisa_quant.refresh_pipeline import refresh_phase3
 
         snapshot = _snapshot_with_unusable_sec_facts()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output = root / "report.json"
             with patch(
-                "nisa_quant.phase3_producer.fetch_current_sp500_universe",
+                "nisa_quant.refresh_pipeline.fetch_current_sp500_universe",
                 return_value=[snapshot.universe[0]],
             ), patch(
-                "nisa_quant.phase3_producer.fetch_sec_company_facts_for_ticker",
+                "nisa_quant.refresh_pipeline.fetch_sec_company_facts_for_ticker",
                 side_effect=ValueError("SEC Company Facts response CIK does not match the requested CIK"),
             ), patch(
-                "nisa_quant.phase3_producer.fetch_history_snapshot",
+                "nisa_quant.refresh_pipeline.fetch_history_snapshot",
                 return_value=snapshot,
             ):
                 refresh_phase3(

@@ -51,7 +51,7 @@ def _cache_path(directory: Path) -> Path:
 
 
 class Phase3ReleaseBlockersCacheTests(unittest.TestCase):
-    def test_phase3_docs_describe_supported_local_dataset_cli_and_real_metrics(self) -> None:
+    def test_docs_describe_supported_local_dataset_cli_and_real_metrics(self) -> None:
         docs_root = Path(__file__).parents[1] / "docs"
         text = "\n".join(
             (docs_root / name).read_text(encoding="utf-8")

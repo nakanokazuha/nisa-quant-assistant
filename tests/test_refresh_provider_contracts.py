@@ -14,9 +14,9 @@ from nisa_quant.historical_market_data import HttpResponse, MarketBar, SecFact, 
 from nisa_quant.ranking_model import SpecializedRankingModel, load_model, save_model
 from nisa_quant.training_dataset import TrainingDataset, _identity, build_monthly_panel, load_training_dataset, save_training_dataset
 from nisa_quant.walk_forward_evaluation import load_backtest, save_backtest, walk_forward_backtest, walk_forward_splits
-from nisa_quant.phase3_producer import parse_current_sp500_html
-from nisa_quant.phase3_producer import refresh_phase3
-from nisa_quant.phase3_reporting import render_phase3_report
+from nisa_quant.refresh_pipeline import parse_current_sp500_html
+from nisa_quant.refresh_pipeline import refresh_phase3
+from nisa_quant.quant_report import render_phase3_report
 
 
 def _row(name: str, decision: str, endpoint: str, *, metadata: dict | None = None):
@@ -67,8 +67,8 @@ class Phase3AdditionalReleaseBlockerTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "report.json"
-            with patch("nisa_quant.phase3_producer.fetch_current_sp500_universe", return_value=universe), patch(
-                "nisa_quant.phase3_producer.fetch_history_snapshot", return_value=snapshot,
+            with patch("nisa_quant.refresh_pipeline.fetch_current_sp500_universe", return_value=universe), patch(
+                "nisa_quant.refresh_pipeline.fetch_history_snapshot", return_value=snapshot,
             ):
                 status = refresh_phase3(
                     as_of="2026-09-16", start="2026-01-01", end="2026-09-16",
@@ -108,7 +108,7 @@ class Phase3AdditionalReleaseBlockerTests(unittest.TestCase):
                     MarketBar(ticker, day.isoformat(), 100 + multiplier * index, 100 + multiplier * index,
                               100 + multiplier * index, 100 + multiplier * index, 1000 + index,
                               100 + multiplier * index, retrieved_at="2026-09-16T00:00:00+00:00",
-                              source="fixture-market", citation="tests/fixtures/phase3_offline_producer.json")
+                              source="fixture-market", citation="tests/fixtures/offline_refresh_fixture.json")
                     for index, day in enumerate(days)
                 ]
             contract = json.dumps({
@@ -149,7 +149,7 @@ class Phase3AdditionalReleaseBlockerTests(unittest.TestCase):
         self.assertEqual(report["artifact_binding"]["missing_feature_policy"], artifact.missing_feature_policy)
         self.assertEqual(backtest.missing_feature_policy, artifact.missing_feature_policy)
         self.assertIn("scenarios", report["backtest"])
-        self.assertIn("market_source_ids", json.loads((Path(__file__).parents[0] / "fixtures" / "phase3_offline_producer.json").read_text()))
+        self.assertIn("market_source_ids", json.loads((Path(__file__).parents[0] / "fixtures" / "offline_refresh_fixture.json").read_text()))
 
     def test_current_sp500_parser_deduplicates_and_preserves_source_symbols(self):
         rows = "".join(f"<tr><td>{'BRK.B' if index == 0 else f'T{index:03d}'}</td><td>Security {index}</td></tr>" for index in range(120))

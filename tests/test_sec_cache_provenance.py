@@ -19,7 +19,7 @@ from nisa_quant.historical_market_data import (
     load_history_snapshot,
     parse_sec_company_facts,
 )
-from nisa_quant.phase3_producer import refresh_phase3
+from nisa_quant.refresh_pipeline import refresh_phase3
 
 
 def _contract() -> str:
@@ -73,16 +73,16 @@ class SolR150SecCacheIsolationTests(unittest.TestCase):
             raise ValueError("stop after SEC isolation probe")
 
         with tempfile.TemporaryDirectory() as directory, patch(
-            "nisa_quant.phase3_producer.fetch_current_sp500_universe",
+            "nisa_quant.refresh_pipeline.fetch_current_sp500_universe",
             return_value=[_member()],
         ), patch(
-            "nisa_quant.phase3_producer.fetch_history_snapshot",
+            "nisa_quant.refresh_pipeline.fetch_history_snapshot",
             return_value=snapshot,
         ), patch(
-            "nisa_quant.phase3_producer.build_monthly_panel",
+            "nisa_quant.refresh_pipeline.build_monthly_panel",
             side_effect=stop_before_features,
         ), patch(
-            "nisa_quant.phase3_producer.MIN_PHASE3_MARKET_ROWS", 0,
+            "nisa_quant.refresh_pipeline.MIN_PHASE3_MARKET_ROWS", 0,
         ):
             root = Path(directory)
             output = root / "report.json"
@@ -117,19 +117,19 @@ class SolR150SecCacheIsolationTests(unittest.TestCase):
             raise ValueError("stop after SEC isolation probe")
 
         with tempfile.TemporaryDirectory() as directory, patch(
-            "nisa_quant.phase3_producer.fetch_current_sp500_universe",
+            "nisa_quant.refresh_pipeline.fetch_current_sp500_universe",
             return_value=[_member()],
         ), patch(
-            "nisa_quant.phase3_producer.fetch_sec_company_facts_for_ticker",
+            "nisa_quant.refresh_pipeline.fetch_sec_company_facts_for_ticker",
             return_value=[],
         ), patch(
-            "nisa_quant.phase3_producer.fetch_history_snapshot",
+            "nisa_quant.refresh_pipeline.fetch_history_snapshot",
             return_value=snapshot,
         ), patch(
-            "nisa_quant.phase3_producer.build_monthly_panel",
+            "nisa_quant.refresh_pipeline.build_monthly_panel",
             side_effect=stop_before_features,
         ), patch(
-            "nisa_quant.phase3_producer.MIN_PHASE3_MARKET_ROWS", 0,
+            "nisa_quant.refresh_pipeline.MIN_PHASE3_MARKET_ROWS", 0,
         ):
             root = Path(directory)
             output = root / "report.json"

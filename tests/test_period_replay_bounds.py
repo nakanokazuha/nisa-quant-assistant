@@ -16,8 +16,8 @@ from nisa_quant.historical_market_data import (
     build_history_snapshot,
     load_history_snapshot,
 )
-from nisa_quant.phase3_producer import refresh_phase3
-from nisa_quant.phase3_reporting import render_phase3_report
+from nisa_quant.refresh_pipeline import refresh_phase3
+from nisa_quant.quant_report import render_phase3_report
 from nisa_quant.ranking_model import SpecializedRankingModel
 from nisa_quant.training_dataset import PanelRow, TrainingDataset, _identity
 from nisa_quant.walk_forward_evaluation import (

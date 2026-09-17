@@ -13,8 +13,8 @@ from unittest.mock import patch
 from nisa_quant.feature_engineering import FEATURE_SCHEMA
 from nisa_quant.historical_market_data import MarketBar, UniverseMember, build_history_snapshot, save_history_snapshot
 from nisa_quant.__main__ import main
-from nisa_quant.phase3_producer import refresh_phase3
-from nisa_quant.phase3_reporting import render_phase3_report
+from nisa_quant.refresh_pipeline import refresh_phase3
+from nisa_quant.quant_report import render_phase3_report
 from nisa_quant.ranking_model import RankingModelArtifact, SpecializedRankingModel, load_model, save_model
 from nisa_quant.training_dataset import PanelRow, TrainingDataset, _identity
 from nisa_quant.walk_forward_evaluation import (
@@ -382,12 +382,12 @@ class ReplayCompatibilityTests(unittest.TestCase):
             )
             artifact = SimpleNamespace(model_id="model-r115")
             backtest = SimpleNamespace(backtest_id="backtest-r115", metrics={"availability_status": "available"})
-            with patch("nisa_quant.phase3_producer.load_history_snapshot", return_value=snapshot), \
-                 patch("nisa_quant.phase3_producer.build_monthly_panel", return_value=dataset), \
-                 patch("nisa_quant.phase3_producer.SpecializedRankingModel") as model_type, \
-                 patch("nisa_quant.phase3_producer.rank_current_candidates", return_value=[]), \
-                 patch("nisa_quant.phase3_producer.walk_forward_backtest", return_value=backtest), \
-                 patch("nisa_quant.phase3_producer.render_phase3_report", return_value={"status": "available"}):
+            with patch("nisa_quant.refresh_pipeline.load_history_snapshot", return_value=snapshot), \
+                 patch("nisa_quant.refresh_pipeline.build_monthly_panel", return_value=dataset), \
+                 patch("nisa_quant.refresh_pipeline.SpecializedRankingModel") as model_type, \
+                 patch("nisa_quant.refresh_pipeline.rank_current_candidates", return_value=[]), \
+                 patch("nisa_quant.refresh_pipeline.walk_forward_backtest", return_value=backtest), \
+                 patch("nisa_quant.refresh_pipeline.render_phase3_report", return_value={"status": "available"}):
                 model_type.return_value.artifact = artifact
                 output = root / "report.json"
                 status = refresh_phase3(
@@ -428,7 +428,7 @@ class ReplayCompatibilityTests(unittest.TestCase):
             for contract in (requested, wrong_asset):
                 path = cache / f"history-{hashlib.sha256(contract.encode()).hexdigest()[:24]}.json"
                 path.write_text(json.dumps({"request_contract": contract}), encoding="utf-8")
-            from nisa_quant.phase3_producer import _find_compatible_history_cache_paths
+            from nisa_quant.refresh_pipeline import _find_compatible_history_cache_paths
             matches = _find_compatible_history_cache_paths(
                 cache, start="2026-01-01", end="2026-02-01",
                 expected_request_contract=requested,
@@ -491,7 +491,7 @@ class ProducerInputValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "report.json"
             with patch(
-                "nisa_quant.phase3_producer.fetch_current_sp500_universe",
+                "nisa_quant.refresh_pipeline.fetch_current_sp500_universe",
                 return_value=[],
             ) as fetch_universe:
                 status = refresh_phase3(

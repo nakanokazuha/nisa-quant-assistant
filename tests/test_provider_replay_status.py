@@ -22,8 +22,8 @@ from nisa_quant.historical_market_data import (
     parse_sec_company_facts,
     save_history_snapshot,
 )
-from nisa_quant.phase3_producer import fetch_current_sp500_universe, refresh_phase3
-from nisa_quant.phase3_reporting import render_phase3_report
+from nisa_quant.refresh_pipeline import fetch_current_sp500_universe, refresh_phase3
+from nisa_quant.quant_report import render_phase3_report
 from nisa_quant.ranking_model import SpecializedRankingModel, rank_current_candidates
 from nisa_quant.return_targets import target_label_available_by
 from nisa_quant.training_dataset import PanelRow, TrainingDataset, _identity

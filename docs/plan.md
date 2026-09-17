@@ -10,7 +10,7 @@ Historical research / deferred — not active implementation instructions: the l
 
 ## Phase 3 status — implemented read-only MVP
 
-The standalone Phase 3 MVP is implemented in `src/nisa_quant/historical_market_data.py`, `feature_engineering.py`, `return_targets.py`, `training_dataset.py`, `ranking_model.py`, `walk_forward_evaluation.py`, `scenario_analysis.py`, and `phase3_reporting.py`. It is exercised with offline fixtures and can optionally retrieve public Yahoo chart data into ignored local cache. The specialized model is the dependency-free ridge ranking baseline documented in `docs/phase3-model.md`; a foundation model, historical S&P membership, and all trading/broker write paths remain deferred/prohibited.
+The standalone Phase 3 MVP is implemented in `src/nisa_quant/historical_market_data.py`, `feature_engineering.py`, `return_targets.py`, `training_dataset.py`, `ranking_model.py`, `walk_forward_evaluation.py`, `scenario_analysis.py`, and `quant_report.py`. It is exercised with offline fixtures and can optionally retrieve public Yahoo chart data into ignored local cache. The specialized model is the dependency-free ridge ranking baseline documented in `docs/phase3-model.md`; a foundation model, historical S&P membership, and all trading/broker write paths remain deferred/prohibited.
 
 Use the Phase 3 Python APIs for history retrieval, snapshot replay, panel construction, model fitting, and report rendering. The exposed CLI commands are `phase3-backtest --dataset DATASET --output OUTPUT` and `phase3-refresh`; refresh is replay-only by default, with explicit `--live` and `--limit N` reserved for live smoke testing. See `docs/phase3-operations.md` for the full workflow.
 

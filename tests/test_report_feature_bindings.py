@@ -5,7 +5,7 @@ import unittest
 
 from nisa_quant.feature_engineering import FEATURE_SCHEMA, build_features
 from nisa_quant.historical_market_data import MarketBar, SecFact, UniverseMember, build_history_snapshot
-from nisa_quant.phase3_reporting import render_phase3_report
+from nisa_quant.quant_report import render_phase3_report
 from nisa_quant.training_dataset import build_monthly_panel
 
 

@@ -21,8 +21,8 @@ from nisa_quant.historical_market_data import (
     save_history_snapshot,
 )
 from nisa_quant.evidence_providers import normalize_sec_company_facts
-from nisa_quant.phase3_producer import refresh_phase3
-from nisa_quant.phase3_reporting import render_phase3_report
+from nisa_quant.refresh_pipeline import refresh_phase3
+from nisa_quant.quant_report import render_phase3_report
 from nisa_quant.ranking_model import SpecializedRankingModel, rank_current_candidates
 from nisa_quant.training_dataset import PanelRow, TrainingDataset, _identity, build_monthly_panel
 from nisa_quant.walk_forward_evaluation import (
@@ -298,9 +298,9 @@ class MarketEligibilityTests(unittest.TestCase):
         self.assertNotIn("FAIL", {item["ticker"] for item in predictions})
 
         with tempfile.TemporaryDirectory() as directory, patch(
-            "nisa_quant.phase3_producer.fetch_current_sp500_universe", return_value=members,
+            "nisa_quant.refresh_pipeline.fetch_current_sp500_universe", return_value=members,
         ), patch(
-            "nisa_quant.phase3_producer.fetch_history_snapshot", return_value=snapshot,
+            "nisa_quant.refresh_pipeline.fetch_history_snapshot", return_value=snapshot,
         ):
             output = Path(directory) / "report.json"
             status = refresh_phase3(
@@ -368,9 +368,9 @@ class ProviderPayloadTests(unittest.TestCase):
 
     def test_malformed_provider_refresh_writes_structured_unavailable_output(self) -> None:
         with tempfile.TemporaryDirectory() as directory, patch(
-            "nisa_quant.phase3_producer.fetch_current_sp500_universe", return_value=[],
+            "nisa_quant.refresh_pipeline.fetch_current_sp500_universe", return_value=[],
         ), patch(
-            "nisa_quant.phase3_producer.fetch_history_snapshot",
+            "nisa_quant.refresh_pipeline.fetch_history_snapshot",
             side_effect=ValueError("Yahoo chart result has invalid shape"),
         ):
             root = Path(directory)
@@ -407,11 +407,11 @@ class StatusContractTests(unittest.TestCase):
             return original_backtest(dataset, model=model, validation_dates=[first_date])  # type: ignore[arg-type]
 
         with tempfile.TemporaryDirectory() as directory, patch(
-            "nisa_quant.phase3_producer.fetch_current_sp500_universe", return_value=members,
+            "nisa_quant.refresh_pipeline.fetch_current_sp500_universe", return_value=members,
         ), patch(
-            "nisa_quant.phase3_producer.fetch_history_snapshot", return_value=snapshot,
+            "nisa_quant.refresh_pipeline.fetch_history_snapshot", return_value=snapshot,
         ), patch(
-            "nisa_quant.phase3_producer.walk_forward_backtest", side_effect=insufficient_backtest,
+            "nisa_quant.refresh_pipeline.walk_forward_backtest", side_effect=insufficient_backtest,
         ):
             root = Path(directory)
             output = root / "report.json"

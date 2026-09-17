@@ -19,7 +19,7 @@ from nisa_quant.historical_market_data import (
     build_sec_request_contract,
     fetch_history_snapshot,
 )
-from nisa_quant.phase3_producer import refresh_phase3
+from nisa_quant.refresh_pipeline import refresh_phase3
 
 
 def _sec_contract(status: str) -> str:
@@ -69,13 +69,13 @@ class SolR169SecStatusTests(unittest.TestCase):
             root = Path(directory)
             output = root / "report.json"
             with patch(
-                "nisa_quant.phase3_producer._find_compatible_history_cache_paths",
+                "nisa_quant.refresh_pipeline._find_compatible_history_cache_paths",
                 return_value=[root / "history-cached.json"],
             ), patch(
-                "nisa_quant.phase3_producer.load_history_snapshot",
+                "nisa_quant.refresh_pipeline.load_history_snapshot",
                 return_value=_cached_snapshot(status),
             ), patch(
-                "nisa_quant.phase3_producer.build_monthly_panel",
+                "nisa_quant.refresh_pipeline.build_monthly_panel",
                 side_effect=ValueError("stop after SEC replay probe"),
             ):
                 refresh_phase3(
@@ -165,14 +165,14 @@ class SolR169SecStatusTests(unittest.TestCase):
             root = Path(directory)
             output = root / "report.json"
             with patch(
-                "nisa_quant.phase3_producer._find_compatible_history_cache_paths",
+                "nisa_quant.refresh_pipeline._find_compatible_history_cache_paths",
                 return_value=[root / "history-cached.json"],
             ), patch(
-                "nisa_quant.phase3_producer.load_history_snapshot", return_value=snapshot,
+                "nisa_quant.refresh_pipeline.load_history_snapshot", return_value=snapshot,
             ), patch(
-                "nisa_quant.phase3_producer.build_monthly_panel",
+                "nisa_quant.refresh_pipeline.build_monthly_panel",
                 side_effect=stop_before_feature_consumption,
-            ), patch("nisa_quant.phase3_producer.MIN_PHASE3_MARKET_ROWS", 0):
+            ), patch("nisa_quant.refresh_pipeline.MIN_PHASE3_MARKET_ROWS", 0):
                 refresh_phase3(
                     as_of="2026-01-01", start="2025-01-01", end="2026-01-01",
                     cache_dir=root / "cache", output=output, replay_only=True,

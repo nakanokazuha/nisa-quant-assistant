@@ -20,7 +20,7 @@ from nisa_quant.historical_market_data import (
     fetch_history_snapshot,
     load_history_snapshot,
 )
-from nisa_quant.phase3_producer import refresh_phase3
+from nisa_quant.refresh_pipeline import refresh_phase3
 
 
 def _request_contract(start: date, end: date) -> str:
@@ -154,9 +154,9 @@ class SolR142ZeroVolumeTests(unittest.TestCase):
 class SolR142ProducerFailureTests(unittest.TestCase):
     def test_zero_division_provider_failure_is_structured_unavailable(self) -> None:
         with tempfile.TemporaryDirectory() as directory, patch(
-            "nisa_quant.phase3_producer.fetch_current_sp500_universe", return_value=[],
+            "nisa_quant.refresh_pipeline.fetch_current_sp500_universe", return_value=[],
         ), patch(
-            "nisa_quant.phase3_producer.fetch_history_snapshot",
+            "nisa_quant.refresh_pipeline.fetch_history_snapshot",
             side_effect=ZeroDivisionError("malformed zero-volume provider data"),
         ):
             output = Path(directory) / "report.json"

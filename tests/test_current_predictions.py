@@ -12,8 +12,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from nisa_quant.feature_engineering import FEATURE_SCHEMA
-from nisa_quant.phase3_producer import refresh_phase3, unavailable_refresh_report
-from nisa_quant.phase3_reporting import render_phase3_report
+from nisa_quant.refresh_pipeline import refresh_phase3, unavailable_refresh_report
+from nisa_quant.quant_report import render_phase3_report
 from nisa_quant.ranking_model import (
     SpecializedRankingModel,
     current_prediction_freshness,
@@ -276,7 +276,7 @@ class Phase3CurrentPredictionsR97Tests(unittest.TestCase):
                 encoding="utf-8",
             )
             output = root / "report.json"
-            with patch("nisa_quant.phase3_producer.load_history_snapshot", return_value=snapshot):
+            with patch("nisa_quant.refresh_pipeline.load_history_snapshot", return_value=snapshot):
                 refresh_phase3(
                     as_of="2026-01-01", start="2025-01-01", end="2026-01-01",
                     cache_dir=cache, output=output, live=False, replay_only=True,

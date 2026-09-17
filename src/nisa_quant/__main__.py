@@ -19,7 +19,7 @@ from .source_records import import_distribution_fixture, import_price_fixture
 from .watchlist import add_watchlist_item
 from .training_dataset import load_training_dataset
 from .walk_forward_evaluation import _validate_transaction_cost_bps, save_backtest, walk_forward_backtest
-from .phase3_producer import refresh_phase3
+from .refresh_pipeline import refresh_phase3
 
 
 def _transaction_cost_argument(value: str) -> float:

@@ -82,7 +82,7 @@ from nisa_quant.historical_market_data import fetch_history_snapshot, load_histo
 from nisa_quant.training_dataset import build_monthly_panel, save_training_dataset
 from nisa_quant.ranking_model import SpecializedRankingModel, save_model
 from nisa_quant.walk_forward_evaluation import save_backtest, walk_forward_backtest
-from nisa_quant.phase3_reporting import render_phase3_report
+from nisa_quant.quant_report import render_phase3_report
 
 history = fetch_history_snapshot(tickers=["AAA"], cache_dir=Path("data/phase3"))
 history = load_history_snapshot(Path("data/phase3/history-<key>.json"), expected_request_contract=history.request_contract)

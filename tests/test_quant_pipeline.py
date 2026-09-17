@@ -18,7 +18,7 @@ from nisa_quant.historical_market_data import (
     load_history_snapshot,
     save_history_snapshot,
 )
-from nisa_quant.phase3_reporting import render_phase3_report
+from nisa_quant.quant_report import render_phase3_report
 from nisa_quant.ranking_model import factor_score, load_model, save_model
 from nisa_quant.return_targets import calculate_forward_targets
 from nisa_quant.training_dataset import TrainingDataset
@@ -301,7 +301,7 @@ class Phase3CoreCorrectnessTests(unittest.TestCase):
         self.assertEqual(report["backtest"]["periods"], [])
         self.assertNotIn('"alpha":', json.dumps(report))
 
-    def test_phase3_report_json_keeps_safety_and_suppresses_injected_alpha(self) -> None:
+    def test_report_json_keeps_safety_and_suppresses_injected_alpha(self) -> None:
         dataset = {
             "dataset_id": "dataset-report", "history_snapshot_id": "history-report",
             "benchmark_ticker": "^GSPC", "feature_schema": list(FEATURE_SCHEMA),
