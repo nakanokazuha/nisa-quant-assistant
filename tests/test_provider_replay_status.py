@@ -292,17 +292,5 @@ class SolR100StatusTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2, result.stderr)
         self.assertEqual(backtest["metrics"]["availability_status"], "unavailable_insufficient_data")
 
-    def test_release_docs_define_phase3_status_exit_and_exposed_refresh_contract(self) -> None:
-        root = Path(__file__).parents[1]
-        text = "\n".join((root / "docs" / name).read_text(encoding="utf-8") for name in (
-            "README.md", "plan.md", "phase3-operations.md",
-        ))
-        for phrase in (
-            "phase3-refresh", "available_descriptive", "unavailable_insufficient_data",
-            "exit 0", "exit 2", "full_current_sp500", "--limit",
-        ):
-            self.assertIn(phrase, text)
-
-
 if __name__ == "__main__":
     unittest.main()

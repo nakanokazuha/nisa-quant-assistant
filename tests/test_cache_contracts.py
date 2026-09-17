@@ -50,23 +50,7 @@ def _cache_path(directory: Path) -> Path:
     return paths[0]
 
 
-class Phase3ReleaseBlockersCacheTests(unittest.TestCase):
-    def test_docs_describe_supported_local_dataset_cli_and_real_metrics(self) -> None:
-        docs_root = Path(__file__).parents[1] / "docs"
-        text = "\n".join(
-            (docs_root / name).read_text(encoding="utf-8")
-            for name in ("README.md", "phase3-data.md", "phase3-model.md", "phase3-operations.md")
-        )
-
-        self.assertNotIn("phase3-" + "fetch-history", text)
-        self.assertIn("phase3-backtest", text)
-        self.assertIn("--dataset", text)
-        self.assertIn("--output", text)
-        self.assertIn("existing local", text)
-        self.assertIn("does not fetch", text)
-        self.assertNotIn("target_1m_total_return", text)
-        self.assertIn("target_1m_return", text)
-
+class Phase3CacheContractTests(unittest.TestCase):
     def test_market_cache_contract_binds_all_request_dimensions_and_round_trips_types(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

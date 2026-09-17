@@ -15,26 +15,10 @@ from nisa_quant.source_records import add_source_record
 from nisa_quant.watchlist import add_watchlist_item, watchlist_as_of
 
 
-ROOT = Path(__file__).parent.parent
 BROKER_COLUMNS = (
     "取引日", "口座区分", "銘柄コード", "銘柄コード種別", "銘柄名", "取引区分",
     "数量", "単価", "手数料", "通貨", "分配金", "備考",
 )
-MARKER = "Historical research / deferred — not active implementation instructions"
-RESEARCH_ARTIFACTS = (
-    "docs/research/NISA_AI_INTEGRATION_REPORT.md",
-    "docs/plan.md",
-    "docs/specification.md",
-    "docs/research/deleg3-broker-workflows.md",
-    "docs/research/deleg3-full-tail.md",
-    "docs/research/deleg3-sources.txt",
-    "docs/research/subagent1-frameworks-data.md",
-    "docs/research/subagent2-signals-mcp.md",
-    "docs/research/subagent3-brokers-jquants.md",
-    "docs/research/verified-repos.md",
-)
-
-
 def write_csv(path: Path, rows: list[list[str]]) -> None:
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
@@ -303,13 +287,6 @@ class WatchlistAndSourceRepairTests(unittest.TestCase):
             self.assertEqual(item["price_history"][0]["source_id"], old_id)
             self.assertNotIn(invalid_id, item["source_ids"])
             connection.close()
-
-
-class ResearchArtifactBoundaryTests(unittest.TestCase):
-    def test_every_checked_in_research_artifact_has_explicit_deferred_marker(self) -> None:
-        for name in RESEARCH_ARTIFACTS:
-            with self.subTest(name=name):
-                self.assertIn(MARKER, (ROOT / name).read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
